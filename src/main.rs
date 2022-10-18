@@ -1,4 +1,4 @@
-use rusty_nes::{self, CartLoadStatus};
+use rusty_nes::System;
 
 use clap::Parser;
 
@@ -11,16 +11,7 @@ struct RustyArgs {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = RustyArgs::parse();
 
-    let cart = rusty_nes::load_to_cart(args.filename);
-    match cart {
-        CartLoadStatus::Success(_) => print!("yay"),
-        CartLoadStatus::FileNotARom => {
-            eprint!("Not a valid ROM file.")
-        }
-        CartLoadStatus::FileNotFound => {
-            eprint!("ROM file not found.")
-        }
-    }
+    let system = System::new(args.filename);
 
     // rusty_nes::run();
     Ok(())

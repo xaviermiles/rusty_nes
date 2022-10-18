@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct PPU {}
 
 impl PPU {

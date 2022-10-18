@@ -1,19 +1,33 @@
 use crate::apu::APU;
+use crate::cart::{self, Cart, CartLoadStatus};
 use crate::ppu::PPU;
 
-struct System {
+#[derive(Debug)]
+pub struct System {
     scratch_ram: Box<[u8]>,
     ppu: PPU,
     apu: APU,
+    cart: Cart,
 }
 
 impl System {
-    pub fn new() -> Self {
+    pub fn new(filename: String) -> Self {
+        let cart = match cart::load_to_cart(filename) {
+            CartLoadStatus::Success(cart) => cart,
+            CartLoadStatus::FileNotARom => {
+                panic!("Not a valid ROM file.")
+            }
+            CartLoadStatus::FileNotFound => {
+                panic!("ROM file not found.")
+            }
+        };
+
         // TODO: power-on state of `scratch_ram` is funkier than this
-        Self {
+        System {
             scratch_ram: Box::new([0; 0x800]),
             ppu: PPU::new(),
             apu: APU::new(),
+            cart,
         }
     }
 

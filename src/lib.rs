@@ -5,8 +5,8 @@ mod sdl;
 mod system;
 mod video;
 
-pub use cart::{load_to_cart, CartLoadStatus};
 use sdl::SDL;
+pub use system::System;
 
 const WINDOW_WIDTH: i32 = 600;
 
