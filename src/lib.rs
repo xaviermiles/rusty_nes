@@ -1,6 +1,8 @@
+mod cart;
 mod sdl;
 mod video;
 
+pub use cart::{load_to_cart, CartLoadStatus};
 use sdl::SDL;
 use video::draw_frame;
 
