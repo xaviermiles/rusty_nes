@@ -1,10 +1,12 @@
 mod apu;
 mod cart;
+mod cpu;
 mod ppu;
 mod sdl;
 mod system;
 mod video;
 
+pub use cpu::CPU;
 use sdl::SDL;
 pub use system::System;
 

@@ -43,7 +43,7 @@ impl System {
         }
     }
 
-    pub fn write_byte(mut self, address: u16, value: u8) {
+    pub fn write_byte(&mut self, address: u16, value: u8) {
         if address < 0x2000 {
             self.scratch_ram[(address & 0x7ff) as usize] = value;
         } else if address < 0x4000 {
@@ -53,6 +53,14 @@ impl System {
         } else {
             self.write_mapper_byte(address, value);
         }
+    }
+
+    pub fn read_word(&self, address: u16) -> u16 {
+        let mut output: u16 = 0;
+        output += self.read_byte(address + 1) as u16;
+        output = output << 8;
+        output += self.read_byte(address) as u16;
+        return output;
     }
 
     fn read_mapper_byte(&self, address: u16) -> u8 {
