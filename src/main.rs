@@ -13,6 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let system = System::new(args.filename);
     let cpu = CPU::new(&system);
+    cpu.pretty_print();
 
     // rusty_nes::run();
     Ok(())
