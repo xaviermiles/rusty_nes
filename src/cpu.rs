@@ -24,7 +24,7 @@ pub struct CPU<'a> {
     zero: bool,
     interrupt_disable: bool,
     decimal: bool,
-    // TODO: add No CPU Effect (the B flag)
+    break_flag: bool,
     overflow: bool,
     negative: bool,
 
@@ -39,7 +39,7 @@ impl<'a> CPU<'a> {
     /// Create a new CPU, in the power up state
     ///
     /// See: https://www.nesdev.org/wiki/CPU_power_up_state
-    pub fn new(system: &'a System) -> Self {
+    pub fn new(system: &'a mut System) -> Self {
         let reset_vector = (&system.read_word(0xfffc)).clone();
 
         Self {
@@ -52,6 +52,7 @@ impl<'a> CPU<'a> {
             zero: false,
             interrupt_disable: true,
             decimal: false,
+            break_flag: false,
             overflow: false,
             negative: false,
             system,
@@ -449,5 +450,141 @@ impl<'a> CPU<'a> {
         };
 
         self.system.write_byte(address, self.y);
+    }
+
+    /// Transfer A to X
+    fn tax(&mut self) {
+        // TODO: verify opcode is $AA?
+        self.clock += 2;
+        self.pc += 1;
+
+        self.negative = self.a & 0x80 == 0x80;
+        self.zero = self.a == 0;
+
+        self.x = self.a;
+    }
+
+    /// Transfer X to A
+    fn txa(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+
+        self.negative = self.x & 0x80 == 0x80;
+        self.zero = self.x == 0;
+
+        self.a = self.x;
+    }
+
+    /// Transfer A to Y
+    fn tay(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+
+        self.negative = self.a & 0x80 == 0x80;
+        self.zero = self.a == 0;
+
+        self.y = self.a;
+    }
+
+    /// Transfer X to A
+    fn tya(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+
+        self.negative = self.y & 0x80 == 0x80;
+        self.zero = self.y == 0;
+
+        self.a = self.y;
+    }
+
+    /// Transfer S to X
+    fn tsx(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+
+        self.negative = self.s & 0x80 == 0x80;
+        self.zero = self.s == 0;
+
+        self.x = self.s;
+    }
+
+    /// Transfer X to S
+    fn txs(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+
+        self.s = self.x;
+    }
+
+    /// PuLl Accumulator
+    fn pla(&mut self) {
+        self.clock += 4;
+        self.pc += 1;
+
+        self.s += 1;
+        let intermediate = self.system.read_byte(0x100 + self.s as u16);
+
+        self.negative = intermediate & 0x80 == 0x80;
+        self.zero = intermediate == 0;
+
+        self.a = intermediate;
+    }
+
+    /// PusH Accumulator
+    fn pha(&mut self) {
+        self.clock += 3;
+        self.pc += 1;
+
+        self.system.write_byte(0x100 + self.s as u16, self.a);
+        self.s -= 1;
+    }
+
+    /// PuLl Processor status
+    fn plp(&mut self) {
+        self.clock += 4;
+        self.pc += 1;
+
+        self.s += 1;
+        let intermediate = self.system.read_byte(0x100 + self.s as u16);
+
+        self.negative = intermediate & 0x80 == 0x80;
+        self.overflow = intermediate & 0x40 == 0x40;
+        self.decimal = intermediate & 0x08 == 0x08;
+        self.interrupt_disable = intermediate & 0x04 == 0x04;
+        self.zero = intermediate & 0x02 == 0x02;
+        self.carry = intermediate & 0x01 == 0x01;
+    }
+
+    /// PusH Processor status
+    fn php(&mut self) {
+        self.clock += 3;
+        self.pc += 1;
+
+        let mut intermediate: u8 = 0;
+        if self.negative {
+            intermediate |= 0x80;
+        }
+        if self.overflow {
+            intermediate |= 0x40;
+        }
+        intermediate |= 0x02; // always 1
+        if self.break_flag {
+            intermediate |= 0x10;
+        }
+        if self.decimal {
+            intermediate |= 0x08;
+        }
+        if self.interrupt_disable {
+            intermediate |= 0x04;
+        }
+        if self.zero {
+            intermediate |= 0x02;
+        }
+        if self.carry {
+            intermediate |= 0x01;
+        }
+
+        self.system.write_byte(0x100 + self.s as u16, intermediate);
+        self.s -= 1;
     }
 }

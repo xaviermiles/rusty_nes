@@ -11,8 +11,8 @@ struct RustyArgs {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = RustyArgs::parse();
 
-    let system = System::new(args.filename);
-    let cpu = CPU::new(&system);
+    let mut system = System::new(args.filename);
+    let cpu = CPU::new(&mut system);
     cpu.pretty_print();
 
     // rusty_nes::run();
