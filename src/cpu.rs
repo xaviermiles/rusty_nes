@@ -539,11 +539,8 @@ impl<'a> CPU<'a> {
         self.s -= 1;
     }
 
-    /// PuLl Processor status
-    fn plp(&mut self) {
-        self.clock += 4;
-        self.pc += 1;
-
+    /// Pull status from System
+    fn pull_status(&mut self) {
         self.s += 1;
         let intermediate = self.system.read_byte(0x100 + self.s as u16);
 
@@ -555,11 +552,23 @@ impl<'a> CPU<'a> {
         self.carry = intermediate & 0x01 == 0x01;
     }
 
-    /// PusH Processor status
-    fn php(&mut self) {
-        self.clock += 3;
+    /// Pull program counter
+    fn pull_pc(&mut self) {
+        self.s += 1;
+        self.system.read_word(0x100u16 + self.s as u16);
+        self.s += 1;
+    }
+
+    /// PuLl Processor status
+    fn plp(&mut self) {
+        self.clock += 4;
         self.pc += 1;
 
+        self.pull_status();
+    }
+
+    /// Push status to System
+    fn push_status(&mut self) {
         let mut intermediate: u8 = 0;
         if self.negative {
             intermediate |= 0x80;
@@ -586,5 +595,231 @@ impl<'a> CPU<'a> {
 
         self.system.write_byte(0x100 + self.s as u16, intermediate);
         self.s -= 1;
+    }
+
+    /// Push word to System
+    fn push_word(&mut self, value: u16) {
+        // TODO: What order should this push the bytes?
+        let first_byte = (value >> 8) as u8;
+        self.system.write_byte(0x100u16 + self.s as u16, first_byte);
+        self.s -= 1;
+
+        let second_byte = (value & 0xff) as u8;
+        self.system
+            .write_byte(0x100u16 + self.s as u16, second_byte);
+        self.s -= 1;
+    }
+
+    /// PusH Processor status
+    fn php(&mut self) {
+        self.clock += 3;
+        self.pc += 1;
+
+        self.push_status();
+    }
+
+    fn branch(&mut self) {
+        let arg_address = self.pc + 1;
+        let address = self.system.read_byte(arg_address) as i8;
+
+        let prev_page = self.pc >> 8;
+        // TODO: test this
+        self.pc = (self.pc as i16 + address as i16) as u16;
+        let new_page = self.pc >> 8;
+        if prev_page != new_page {
+            self.clock += 4;
+        } else {
+            self.clock += 3;
+        }
+    }
+
+    fn branch_if(&mut self, condition: bool) {
+        if condition {
+            self.branch();
+        } else {
+            self.clock += 2;
+            self.pc += 2;
+        }
+    }
+
+    /// Branch on PLus
+    fn bpl(&mut self) {
+        self.branch_if(!self.negative);
+    }
+
+    /// Branch on MInus
+    fn bmi(&mut self) {
+        self.branch_if(self.negative);
+    }
+
+    /// Branch on oVerflow Clear
+    fn bvc(&mut self) {
+        self.branch_if(!self.overflow);
+    }
+
+    /// Branch on oVerflow Set
+    fn bvs(&mut self) {
+        self.branch_if(self.overflow);
+    }
+
+    /// Branch on Carry Clear
+    fn bcc(&mut self) {
+        self.branch_if(!self.carry);
+    }
+
+    /// Branch on Carry Set
+    fn bcs(&mut self) {
+        self.branch_if(self.carry);
+    }
+
+    /// Branch on Not Equal
+    fn bne(&mut self) {
+        self.branch_if(!self.zero);
+    }
+
+    /// Branch on EQual
+    fn beq(&mut self) {
+        self.branch_if(self.zero);
+    }
+
+    /// BReaK
+    fn brk(&mut self) {
+        self.clock += 7;
+
+        self.push_word(self.pc);
+
+        let break_address = 0xfffe;
+        self.pc = self.system.read_word(break_address);
+        self.break_flag = true;
+        self.interrupt_disable = true;
+    }
+
+    /// ReTurn from Interrupt
+    fn rti(&mut self) {
+        self.clock += 6;
+        self.pull_status();
+        self.pull_pc();
+    }
+
+    /// Jump to SubRoutine
+    fn jsr(&mut self) {
+        self.clock += 6;
+
+        self.push_word(self.pc + 2);
+
+        let arg_address = self.pc + 1;
+        let address = self.system.read_word(arg_address);
+    }
+
+    /// ReTurn from Subroutine
+    fn rts(&mut self) {
+        self.clock += 6;
+        self.pull_pc()
+    }
+
+    /// JuMP
+    fn jmp(&mut self, opcode: u8) {
+        let arg_address = self.pc + 1;
+
+        match opcode {
+            0x24 => {
+                // Absolute (abs)
+                self.clock += 3;
+                let address = self.system.read_word(arg_address);
+                self.pc = address;
+            }
+            0x2c => {
+                // Indirect absolute (ind)
+                self.clock += 5;
+                let indirect_address = self.system.read_word(arg_address);
+                let address = self.system.read_word(indirect_address);
+                self.pc = address;
+            }
+            _ => panic!("Unknown opcode"),
+        }
+    }
+
+    /// test BITs
+    fn bit(&mut self, opcode: u8) {
+        let arg_address = self.pc + 1;
+
+        let value = match opcode {
+            0x24 => {
+                // Zero page (zp)
+                self.clock += 3;
+                self.pc += 2;
+
+                let address = self.system.read_byte(arg_address);
+                self.system.read_byte(address as u16)
+            }
+            0x2c => {
+                // Absolute (abs)
+                self.clock += 4;
+                self.pc += 3;
+
+                let address = self.system.read_word(arg_address);
+                self.system.read_byte(address)
+            }
+            _ => panic!("Unknown opcode"),
+        };
+
+        self.zero = value & self.a == 0;
+        self.negative = value & 0x80 == 0x80;
+        self.overflow = value & 0x40 == 0x40;
+    }
+
+    /// CLear Carry
+    fn clc(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+        self.carry = false;
+    }
+
+    /// SEt Carry
+    fn sec(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+        self.carry = true;
+    }
+
+    /// CLear Decimal
+    fn cld(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+        self.decimal = false;
+    }
+
+    // SEt Decimal
+    fn sed(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+        self.decimal = true;
+    }
+
+    /// CLear Interrupt
+    fn cli(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+        self.interrupt_disable = false;
+    }
+
+    /// SEt Interrupt
+    fn sei(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+        self.interrupt_disable = true;
+    }
+
+    /// CLear oVerflow
+    fn clv(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+        self.overflow = false;
+    }
+
+    /// No OPeration
+    fn nop(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
     }
 }
