@@ -73,103 +73,131 @@ impl<'a> CPU<'a> {
         print!("{}", if self.carry { "C" } else { "-" });
     }
 
+    // Addressing modes --------------------------------------------------------------------------
+    fn immediate(&mut self) -> u8 {
+        let arg_address = self.pc + 1;
+        self.system.read_byte(arg_address)
+    }
+
+    fn zero_page(&mut self) -> u8 {
+        let arg_address = self.pc + 1;
+        let address = self.system.read_byte(arg_address) as u16;
+        self.system.read_byte(address)
+    }
+
+    fn zero_page_x(&mut self) -> u8 {
+        let arg_address = self.pc + 1;
+        let address = (self.system.read_byte(arg_address) + self.x) as u16;
+        self.system.read_byte(address)
+    }
+
+    fn zero_page_y(&mut self) -> u8 {
+        let arg_address = self.pc + 1;
+        let address = (self.system.read_byte(arg_address) + self.y) as u16;
+        self.system.read_byte(address)
+    }
+
+    fn indirect_zero_page_x(&mut self) -> u8 {
+        let arg_address = self.pc + 1;
+        let address = (self.system.read_byte(arg_address) + self.x) as u16;
+        let indirect_address = self.system.read_word(address);
+        self.system.read_byte(indirect_address)
+    }
+
+    fn indirect_zero_page_y(&mut self, extra_clock_for_page_fault: bool) -> u8 {
+        let arg_address = self.pc + 1;
+        let address = (self.system.read_byte(arg_address) + self.x) as u16;
+
+        let pre_index = self.system.read_word(address);
+        let page1 = pre_index >> 2;
+        let indirect_address = pre_index + self.y as u16;
+        let page2 = indirect_address >> 2;
+        if extra_clock_for_page_fault && page1 != page2 {
+            self.clock += 1;
+        }
+
+        self.system.read_byte(indirect_address)
+    }
+
+    fn absolute(&mut self) -> u8 {
+        let arg_address = self.pc + 1;
+        let address = self.system.read_word(arg_address);
+        self.system.read_byte(address)
+    }
+
+    fn absolute_x(&mut self, extra_clock_for_page_fault: bool) -> u8 {
+        let arg_address = self.pc + 1;
+        let mut address = self.system.read_word(arg_address);
+        let page1 = address >> 2;
+
+        address += self.x as u16;
+        let page2 = address >> 2;
+        if extra_clock_for_page_fault && page1 != page2 {
+            self.clock += 1;
+        }
+
+        self.system.read_byte(address)
+    }
+
+    fn absolute_y(&mut self, extra_clock_for_page_fault: bool) -> u8 {
+        let arg_address = self.pc + 1;
+        let mut address = self.system.read_word(arg_address);
+        let page = address >> 2;
+
+        address += self.y as u16;
+        let new_page = address >> 2;
+        if page != new_page {
+            self.clock += 1;
+        }
+
+        self.system.read_byte(address)
+    }
+
+    // Move commands -----------------------------------------------------------------------------
     /// LoaD Accumulator
     fn lda(&mut self, opcode: u8) {
-        let arg_address = self.pc + 1;
-
         let intermediate = match opcode {
             0xa9 => {
-                // Immediate (imm)
                 self.clock += 2;
                 self.pc += 2;
-
-                self.system.read_byte(arg_address)
+                self.immediate()
             }
             0xa5 => {
-                // Zero page (zp)
                 self.clock += 3;
                 self.pc += 2;
-
-                let address = self.system.read_byte(arg_address) as u16;
-                self.system.read_byte(address)
+                self.zero_page()
             }
             0xb5 => {
-                // Zero page, x (zpx)
                 self.clock += 4;
                 self.pc += 2;
-
-                let address = (self.system.read_byte(arg_address) + self.x) as u16;
-                self.system.read_byte(address)
+                self.zero_page_x()
             }
             0xad => {
-                // Absolute address (abs)
                 self.clock += 4;
                 self.pc += 3;
-
-                let address = self.system.read_word(arg_address);
-                self.system.read_byte(address)
+                self.absolute()
             }
             0xbd => {
-                // Absolute address, x (abx)
                 self.clock += 6;
                 self.pc += 3;
-
-                let mut address = self.system.read_word(arg_address);
-                let page1 = address >> 2;
-
-                address += self.x as u16;
-                let page2 = address >> 2;
-                if page1 != page2 {
-                    self.clock += 1;
-                }
-
-                self.system.read_byte(address)
+                self.absolute_x(true)
             }
             0xb9 => {
-                // Absolute address, y (aby)
                 self.clock += 4;
                 self.pc += 2;
-
-                let mut address = self.system.read_word(arg_address);
-                let page = address >> 2;
-
-                address += self.y as u16;
-                let new_page = address >> 2;
-                if page != new_page {
-                    self.clock += 1;
-                }
-
-                self.system.read_byte(address)
+                self.absolute_y(true)
             }
             0xa1 => {
-                // Indirect zero page, x (izx)
                 self.clock += 6;
                 self.pc += 4;
-
-                let address = (self.system.read_byte(arg_address) + self.x) as u16;
-                let indirect_address = self.system.read_word(address);
-                self.system.read_byte(indirect_address)
+                self.indirect_zero_page_x()
             }
             0xb1 => {
-                // Indirect zero page, y (izy)
                 self.clock += 6;
                 self.pc += 2;
-
-                let address = (self.system.read_byte(arg_address) + self.x) as u16;
-
-                let pre_index = self.system.read_word(address);
-                let page1 = pre_index >> 2;
-                let indirect_address = pre_index + self.y as u16;
-                let page2 = indirect_address >> 2;
-                if page1 != page2 {
-                    self.clock += 1;
-                }
-
-                self.system.read_byte(indirect_address)
+                self.indirect_zero_page_y(true)
             }
-            _ => {
-                panic!("Unknown opcode");
-            }
+            _ => panic!("Unknown opcode"),
         };
 
         // Set the flags
@@ -181,59 +209,33 @@ impl<'a> CPU<'a> {
 
     /// LoaD X register
     fn ldx(&mut self, opcode: u8) {
-        let arg_address = self.pc + 1;
-
         let intermediate = match opcode {
             0xa2 => {
-                // Immediate
                 self.clock += 2;
                 self.pc += 2;
-
-                self.system.read_byte(arg_address)
+                self.immediate()
             }
             0xa6 => {
-                // Zero page (zp)
                 self.clock += 3;
                 self.pc += 2;
-
-                let address = self.system.read_byte(arg_address) as u16;
-                self.system.read_byte(address)
+                self.zero_page()
             }
             0xb6 => {
-                // Zero page, y (zpy)
                 self.clock += 4;
                 self.pc += 2;
-
-                let address = (self.system.read_byte(arg_address) + self.y) as u16;
-                self.system.read_byte(address)
+                self.zero_page_y()
             }
             0xae => {
-                // Absolute address (abs)
                 self.clock += 4;
                 self.pc += 3;
-
-                let address = self.system.read_word(arg_address);
-                self.system.read_byte(address)
+                self.absolute()
             }
             0xbe => {
-                // Absolute address, y (aby)
                 self.clock += 4;
                 self.pc += 2;
-
-                let mut address = self.system.read_word(arg_address);
-                let page = address >> 2;
-
-                address += self.y as u16;
-                let new_page = address >> 2;
-                if page != new_page {
-                    self.clock += 1;
-                }
-
-                self.system.read_byte(address)
+                self.absolute_y(true)
             }
-            _ => {
-                panic!("Unknown opcode");
-            }
+            _ => panic!("Unknown opcode"),
         };
 
         self.negative = intermediate & 0x80 == 0x80;
@@ -244,59 +246,33 @@ impl<'a> CPU<'a> {
 
     /// LoaD Y register
     fn ldy(&mut self, opcode: u8) {
-        let arg_address = self.pc + 1;
-
         let intermediate = match opcode {
             0xa0 => {
-                // Immediate
                 self.clock += 2;
                 self.pc += 2;
-
-                self.system.read_byte(arg_address)
+                self.immediate()
             }
             0xa4 => {
-                // Zero page (zp)
                 self.clock += 3;
                 self.pc += 2;
-
-                let address = self.system.read_byte(arg_address) as u16;
-                self.system.read_byte(address)
+                self.zero_page()
             }
             0xb4 => {
-                // Zero page, x (zpx)
                 self.clock += 4;
                 self.pc += 2;
-
-                let address = (self.system.read_byte(arg_address) + self.x) as u16;
-                self.system.read_byte(address)
+                self.zero_page_x()
             }
             0x8c => {
-                // Absolute address (abs)
                 self.clock += 4;
                 self.pc += 3;
-
-                let address = self.system.read_word(arg_address);
-                self.system.read_byte(address)
+                self.absolute()
             }
             0xbc => {
-                // Absolute address, x (abx)
                 self.clock += 4;
                 self.pc += 2;
-
-                let mut address = self.system.read_word(arg_address);
-                let page = address >> 2;
-
-                address += self.x as u16;
-                let new_page = address >> 2;
-                if page != new_page {
-                    self.clock += 1;
-                }
-
-                self.system.read_byte(address)
+                self.absolute_x(true)
             }
-            _ => {
-                panic!("Unknown opcode");
-            }
+            _ => panic!("Unknown opcode"),
         };
 
         self.negative = intermediate & 0x80 == 0x80;
