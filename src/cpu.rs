@@ -153,6 +153,15 @@ impl<'a> CPU<'a> {
         self.system.read_byte(address)
     }
 
+    // Helpers for setting flags -----------------------------------------------------------------
+    fn test_negative(&mut self, value: u8) {
+        self.negative = value & 0x80 == 0x80;
+    }
+
+    fn test_zero(&mut self, value: u8) {
+        self.zero = value == 0;
+    }
+
     // Move commands -----------------------------------------------------------------------------
     /// LoaD Accumulator
     fn lda(&mut self, opcode: u8) {
@@ -200,9 +209,8 @@ impl<'a> CPU<'a> {
             _ => panic!("Unknown opcode"),
         };
 
-        // Set the flags
-        self.negative = intermediate & 0x80 == 0x80;
-        self.zero = intermediate == 0;
+        self.test_negative(intermediate);
+        self.test_zero(intermediate);
 
         self.a = intermediate;
     }
@@ -238,8 +246,8 @@ impl<'a> CPU<'a> {
             _ => panic!("Unknown opcode"),
         };
 
-        self.negative = intermediate & 0x80 == 0x80;
-        self.zero = intermediate == 0;
+        self.test_negative(intermediate);
+        self.test_zero(intermediate);
 
         self.x = intermediate;
     }
@@ -275,8 +283,8 @@ impl<'a> CPU<'a> {
             _ => panic!("Unknown opcode"),
         };
 
-        self.negative = intermediate & 0x80 == 0x80;
-        self.zero = intermediate == 0;
+        self.test_negative(intermediate);
+        self.test_zero(intermediate);
 
         self.y = intermediate;
     }
@@ -434,8 +442,8 @@ impl<'a> CPU<'a> {
         self.clock += 2;
         self.pc += 1;
 
-        self.negative = self.a & 0x80 == 0x80;
-        self.zero = self.a == 0;
+        self.test_negative(self.a);
+        self.test_zero(self.a);
 
         self.x = self.a;
     }
@@ -445,8 +453,8 @@ impl<'a> CPU<'a> {
         self.clock += 2;
         self.pc += 1;
 
-        self.negative = self.x & 0x80 == 0x80;
-        self.zero = self.x == 0;
+        self.test_negative(self.x);
+        self.test_zero(self.x);
 
         self.a = self.x;
     }
@@ -456,8 +464,8 @@ impl<'a> CPU<'a> {
         self.clock += 2;
         self.pc += 1;
 
-        self.negative = self.a & 0x80 == 0x80;
-        self.zero = self.a == 0;
+        self.test_negative(self.a);
+        self.test_zero(self.a);
 
         self.y = self.a;
     }
@@ -467,8 +475,8 @@ impl<'a> CPU<'a> {
         self.clock += 2;
         self.pc += 1;
 
-        self.negative = self.y & 0x80 == 0x80;
-        self.zero = self.y == 0;
+        self.test_negative(self.y);
+        self.test_zero(self.y);
 
         self.a = self.y;
     }
@@ -478,8 +486,8 @@ impl<'a> CPU<'a> {
         self.clock += 2;
         self.pc += 1;
 
-        self.negative = self.s & 0x80 == 0x80;
-        self.zero = self.s == 0;
+        self.test_negative(self.s);
+        self.test_zero(self.s);
 
         self.x = self.s;
     }
@@ -500,8 +508,8 @@ impl<'a> CPU<'a> {
         self.s += 1;
         let intermediate = self.system.read_byte(0x100 + self.s as u16);
 
-        self.negative = intermediate & 0x80 == 0x80;
-        self.zero = intermediate == 0;
+        self.test_negative(intermediate);
+        self.test_zero(intermediate);
 
         self.a = intermediate;
     }
