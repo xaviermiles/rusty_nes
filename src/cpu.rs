@@ -165,49 +165,19 @@ impl<'a> CPU<'a> {
     // Move commands -----------------------------------------------------------------------------
     /// LoaD Accumulator
     fn lda(&mut self, opcode: u8) {
-        let intermediate = match opcode {
-            0xa9 => {
-                self.clock += 2;
-                self.pc += 2;
-                self.immediate()
-            }
-            0xa5 => {
-                self.clock += 3;
-                self.pc += 2;
-                self.zero_page()
-            }
-            0xb5 => {
-                self.clock += 4;
-                self.pc += 2;
-                self.zero_page_x()
-            }
-            0xad => {
-                self.clock += 4;
-                self.pc += 3;
-                self.absolute()
-            }
-            0xbd => {
-                self.clock += 6;
-                self.pc += 3;
-                self.absolute_x(true)
-            }
-            0xb9 => {
-                self.clock += 4;
-                self.pc += 2;
-                self.absolute_y(true)
-            }
-            0xa1 => {
-                self.clock += 6;
-                self.pc += 4;
-                self.indirect_zero_page_x()
-            }
-            0xb1 => {
-                self.clock += 6;
-                self.pc += 2;
-                self.indirect_zero_page_y(true)
-            }
+        let (intermediate, clock_increment, pc_increment) = match opcode {
+            0xa9 => (self.immediate(), 2, 2),
+            0xa5 => (self.zero_page(), 3, 2),
+            0xb5 => (self.zero_page_x(), 4, 2),
+            0xad => (self.absolute(), 4, 3),
+            0xbd => (self.absolute_x(true), 6, 3),
+            0xb9 => (self.absolute_y(true), 4, 2),
+            0xa1 => (self.indirect_zero_page_x(), 6, 4),
+            0xb1 => (self.indirect_zero_page_y(true), 6, 2),
             _ => panic!("Unknown opcode"),
         };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
 
         self.test_negative(intermediate);
         self.test_zero(intermediate);
@@ -217,34 +187,16 @@ impl<'a> CPU<'a> {
 
     /// LoaD X register
     fn ldx(&mut self, opcode: u8) {
-        let intermediate = match opcode {
-            0xa2 => {
-                self.clock += 2;
-                self.pc += 2;
-                self.immediate()
-            }
-            0xa6 => {
-                self.clock += 3;
-                self.pc += 2;
-                self.zero_page()
-            }
-            0xb6 => {
-                self.clock += 4;
-                self.pc += 2;
-                self.zero_page_y()
-            }
-            0xae => {
-                self.clock += 4;
-                self.pc += 3;
-                self.absolute()
-            }
-            0xbe => {
-                self.clock += 4;
-                self.pc += 2;
-                self.absolute_y(true)
-            }
+        let (intermediate, clock_increment, pc_increment) = match opcode {
+            0xa2 => (self.immediate(), 2, 2),
+            0xa6 => (self.zero_page(), 3, 2),
+            0xb6 => (self.zero_page_y(), 4, 2),
+            0xae => (self.absolute(), 4, 3),
+            0xbe => (self.absolute_y(true), 4, 2),
             _ => panic!("Unknown opcode"),
         };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
 
         self.test_negative(intermediate);
         self.test_zero(intermediate);
@@ -254,34 +206,16 @@ impl<'a> CPU<'a> {
 
     /// LoaD Y register
     fn ldy(&mut self, opcode: u8) {
-        let intermediate = match opcode {
-            0xa0 => {
-                self.clock += 2;
-                self.pc += 2;
-                self.immediate()
-            }
-            0xa4 => {
-                self.clock += 3;
-                self.pc += 2;
-                self.zero_page()
-            }
-            0xb4 => {
-                self.clock += 4;
-                self.pc += 2;
-                self.zero_page_x()
-            }
-            0x8c => {
-                self.clock += 4;
-                self.pc += 3;
-                self.absolute()
-            }
-            0xbc => {
-                self.clock += 4;
-                self.pc += 2;
-                self.absolute_x(true)
-            }
+        let (intermediate, clock_increment, pc_increment) = match opcode {
+            0xa0 => (self.immediate(), 2, 2),
+            0xa4 => (self.zero_page(), 3, 2),
+            0xb4 => (self.zero_page_x(), 4, 2),
+            0x8c => (self.absolute(), 4, 3),
+            0xbc => (self.absolute_x(true), 4, 2),
             _ => panic!("Unknown opcode"),
         };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
 
         self.test_negative(intermediate);
         self.test_zero(intermediate);
