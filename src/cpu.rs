@@ -2,7 +2,7 @@ use crate::system::System;
 
 /// The 2A03 NES CPU core, which is based on the 6502 processor
 ///
-/// See: https://www.nesdev.org/wiki/CPU_registers
+/// See: <https://www.nesdev.org/wiki/CPU_registers>
 pub struct CPU<'a> {
     /// Accumulator
     a: u8,
@@ -19,7 +19,7 @@ pub struct CPU<'a> {
 
     /// Status register flags
     ///
-    /// See: https://www.nesdev.org/wiki/Status_flags
+    /// See: <https://www.nesdev.org/wiki/Status_flags>
     carry: bool,
     zero: bool,
     interrupt_disable: bool,
@@ -38,7 +38,7 @@ pub struct CPU<'a> {
 impl<'a> CPU<'a> {
     /// Create a new CPU, in the power up state
     ///
-    /// See: https://www.nesdev.org/wiki/CPU_power_up_state
+    /// See: <https://www.nesdev.org/wiki/CPU_power_up_state>
     pub fn new(system: &'a mut System) -> Self {
         let reset_vector = (&system.read_word(0xfffc)).clone();
 
