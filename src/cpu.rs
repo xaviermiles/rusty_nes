@@ -162,6 +162,196 @@ impl<'a> CPU<'a> {
         self.zero = value == 0;
     }
 
+    // Logical and arithmetic commands -----------------------------------------------------------
+    /// bitwise OR with Accumulator
+    fn ora(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0x09 => (self.immediate(), 2, 2),
+            0x05 => (self.zero_page(), 3, 2),
+            0x15 => (self.zero_page_x(), 4, 2),
+            0x01 => (self.indirect_zero_page_x(), 6, 2),
+            0x11 => (self.indirect_zero_page_y(true), 5, 2),
+            0x0d => (self.absolute(), 4, 3),
+            0x1d => (self.absolute_x(true), 4, 3),
+            0x19 => (self.absolute_y(true), 4, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        self.a |= self.system.read_byte(intermediate_address);
+        self.test_negative(self.a);
+        self.test_zero(self.a);
+    }
+
+    /// bitwise AND with accumulator
+    fn and(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0x29 => (self.immediate(), 2, 2),
+            0x25 => (self.zero_page(), 3, 2),
+            0x35 => (self.zero_page_x(), 4, 2),
+            0x21 => (self.indirect_zero_page_x(), 6, 2),
+            0x31 => (self.indirect_zero_page_y(true), 5, 2),
+            0x2d => (self.absolute(), 4, 3),
+            0x3d => (self.absolute_x(true), 4, 3),
+            0x39 => (self.absolute_y(true), 4, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        self.a &= self.system.read_byte(intermediate_address);
+        self.test_negative(self.a);
+        self.test_zero(self.a);
+    }
+
+    /// bitwise Exclusive OR
+    fn eor(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0x49 => (self.immediate(), 2, 2),
+            0x45 => (self.zero_page(), 3, 2),
+            0x55 => (self.zero_page_x(), 4, 2),
+            0x41 => (self.indirect_zero_page_x(), 6, 2),
+            0x51 => (self.indirect_zero_page_y(true), 5, 2),
+            0x4d => (self.absolute(), 4, 3),
+            0x5d => (self.absolute_x(true), 4, 3),
+            0x59 => (self.absolute_y(true), 4, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        self.a ^= self.system.read_byte(intermediate_address);
+        self.test_negative(self.a);
+        self.test_zero(self.a);
+    }
+
+    /// ADd with Carry
+    fn adc(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0x69 => (self.immediate(), 2, 2),
+            0x65 => (self.zero_page(), 3, 2),
+            0x75 => (self.zero_page_x(), 4, 2),
+            0x61 => (self.indirect_zero_page_x(), 6, 2),
+            0x71 => (self.indirect_zero_page_y(true), 5, 2),
+            0x6d => (self.absolute(), 4, 3),
+            0x7d => (self.absolute_x(true), 4, 3),
+            0x79 => (self.absolute_y(true), 4, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let intermediate =
+            self.a as i16 + self.system.read_byte(intermediate_address) as i16 + !self.carry as i16;
+        self.overflow = intermediate < -128 || intermediate > 127;
+        self.carry = (intermediate as u16) & 0xff00 != 0;
+        self.a = intermediate as u8;
+
+        self.test_negative(self.a);
+        self.test_zero(self.a);
+    }
+
+    /// SuBtract with Carry
+    fn sbc(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0xe9 => (self.immediate(), 2, 2),
+            0xe5 => (self.zero_page(), 3, 2),
+            0xf5 => (self.zero_page_x(), 4, 2),
+            0xe1 => (self.indirect_zero_page_x(), 6, 2),
+            0xf1 => (self.indirect_zero_page_y(true), 5, 2),
+            0xed => (self.absolute(), 4, 3),
+            0xfd => (self.absolute_x(true), 4, 3),
+            0xf9 => (self.absolute_y(true), 4, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let intermediate =
+            self.a as i16 - self.system.read_byte(intermediate_address) as i16 - !self.carry as i16;
+        self.overflow = intermediate < -128 || intermediate > 127;
+        self.carry = (intermediate as u16) & 0xff00 != 0;
+        self.a = intermediate as u8;
+
+        self.test_negative(self.a);
+        self.test_zero(self.a);
+    }
+
+    /// CoMPare accumulator
+    fn cmp(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0xc9 => (self.immediate(), 2, 2),
+            0xc5 => (self.zero_page(), 3, 2),
+            0xd5 => (self.zero_page_x(), 4, 2),
+            0xc1 => (self.indirect_zero_page_x(), 6, 2),
+            0xd1 => (self.indirect_zero_page_y(true), 5, 2),
+            0xcd => (self.absolute(), 4, 3),
+            0xdd => (self.absolute_x(true), 4, 3),
+            0xd9 => (self.absolute_y(true), 4, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let intermediate = self.a as i16 - self.system.read_byte(intermediate_address) as i16;
+        self.negative = (intermediate & 0x80) == 0x80;
+        self.zero = intermediate == 0;
+        self.carry = intermediate >= 0;
+    }
+
+    /// ComPare X register
+    fn cpx(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0xc0 => (self.immediate(), 2, 2),
+            0xc4 => (self.zero_page(), 3, 2),
+            0xcc => (self.absolute(), 4, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let intermediate = self.y as i16 - self.system.read_byte(intermediate_address) as i16;
+        self.negative = intermediate & 0x80 == 0x80;
+        self.zero = intermediate == 0;
+        self.carry = intermediate >= 0;
+    }
+
+    /// ComPare Y register
+    fn cpy(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0xe0 => (self.immediate(), 2, 2),
+            0xe4 => (self.zero_page(), 3, 2),
+            0xec => (self.absolute(), 4, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let intermediate = self.x as i16 - self.system.read_byte(intermediate_address) as i16;
+        self.negative = intermediate & 0x80 == 0x80;
+        self.zero = intermediate == 0;
+        self.carry = intermediate >= 0;
+    }
+
+    /// DECrement memory
+    fn dec(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0xc6 => (self.zero_page(), 5, 2),
+            0xd6 => (self.zero_page_x(), 6, 2),
+            0xce => (self.absolute(), 6, 3),
+            0xde => (self.absolute_x(false), 7, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let intermediate = self.system.read_byte(intermediate_address) - 1;
+        self.test_zero(intermediate);
+        self.test_negative(intermediate);
+        self.system.write_byte(intermediate_address, intermediate);
+    }
+
     // Move commands -----------------------------------------------------------------------------
     /// LoaD Accumulator
     fn lda(&mut self, opcode: u8) {
@@ -539,6 +729,7 @@ impl<'a> CPU<'a> {
         self.push_status();
     }
 
+    // Jump/Flag commands ------------------------------------------------------------------------
     fn branch(&mut self) {
         let arg_address = self.pc + 1;
         let address = self.system.read_byte(arg_address) as i8;
