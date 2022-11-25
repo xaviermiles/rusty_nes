@@ -74,37 +74,37 @@ impl<'a> CPU<'a> {
     }
 
     // Addressing modes --------------------------------------------------------------------------
-    fn immediate(&mut self) -> u8 {
+    fn immediate(&mut self) -> u16 {
         let arg_address = self.pc + 1;
-        self.system.read_byte(arg_address)
+        arg_address
     }
 
-    fn zero_page(&mut self) -> u8 {
+    fn zero_page(&mut self) -> u16 {
         let arg_address = self.pc + 1;
         let address = self.system.read_byte(arg_address) as u16;
-        self.system.read_byte(address)
+        address
     }
 
-    fn zero_page_x(&mut self) -> u8 {
+    fn zero_page_x(&mut self) -> u16 {
         let arg_address = self.pc + 1;
         let address = (self.system.read_byte(arg_address) + self.x) as u16;
-        self.system.read_byte(address)
+        address
     }
 
-    fn zero_page_y(&mut self) -> u8 {
+    fn zero_page_y(&mut self) -> u16 {
         let arg_address = self.pc + 1;
         let address = (self.system.read_byte(arg_address) + self.y) as u16;
-        self.system.read_byte(address)
+        address
     }
 
-    fn indirect_zero_page_x(&mut self) -> u8 {
+    fn indirect_zero_page_x(&mut self) -> u16 {
         let arg_address = self.pc + 1;
         let address = (self.system.read_byte(arg_address) + self.x) as u16;
         let indirect_address = self.system.read_word(address);
-        self.system.read_byte(indirect_address)
+        indirect_address
     }
 
-    fn indirect_zero_page_y(&mut self, extra_clock_for_page_fault: bool) -> u8 {
+    fn indirect_zero_page_y(&mut self, extra_clock_for_page_fault: bool) -> u16 {
         let arg_address = self.pc + 1;
         let address = (self.system.read_byte(arg_address) + self.x) as u16;
 
@@ -116,16 +116,16 @@ impl<'a> CPU<'a> {
             self.clock += 1;
         }
 
-        self.system.read_byte(indirect_address)
+        indirect_address
     }
 
-    fn absolute(&mut self) -> u8 {
+    fn absolute(&mut self) -> u16 {
         let arg_address = self.pc + 1;
         let address = self.system.read_word(arg_address);
-        self.system.read_byte(address)
+        address
     }
 
-    fn absolute_x(&mut self, extra_clock_for_page_fault: bool) -> u8 {
+    fn absolute_x(&mut self, extra_clock_for_page_fault: bool) -> u16 {
         let arg_address = self.pc + 1;
         let mut address = self.system.read_word(arg_address);
         let page1 = address >> 2;
@@ -136,10 +136,10 @@ impl<'a> CPU<'a> {
             self.clock += 1;
         }
 
-        self.system.read_byte(address)
+        address
     }
 
-    fn absolute_y(&mut self, extra_clock_for_page_fault: bool) -> u8 {
+    fn absolute_y(&mut self, extra_clock_for_page_fault: bool) -> u16 {
         let arg_address = self.pc + 1;
         let mut address = self.system.read_word(arg_address);
         let page = address >> 2;
@@ -150,7 +150,7 @@ impl<'a> CPU<'a> {
             self.clock += 1;
         }
 
-        self.system.read_byte(address)
+        address
     }
 
     // Helpers for setting flags -----------------------------------------------------------------
@@ -165,7 +165,7 @@ impl<'a> CPU<'a> {
     // Move commands -----------------------------------------------------------------------------
     /// LoaD Accumulator
     fn lda(&mut self, opcode: u8) {
-        let (intermediate, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xa9 => (self.immediate(), 2, 2),
             0xa5 => (self.zero_page(), 3, 2),
             0xb5 => (self.zero_page_x(), 4, 2),
@@ -179,6 +179,7 @@ impl<'a> CPU<'a> {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        let intermediate = self.system.read_byte(intermediate_address);
         self.test_negative(intermediate);
         self.test_zero(intermediate);
 
@@ -187,7 +188,7 @@ impl<'a> CPU<'a> {
 
     /// LoaD X register
     fn ldx(&mut self, opcode: u8) {
-        let (intermediate, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xa2 => (self.immediate(), 2, 2),
             0xa6 => (self.zero_page(), 3, 2),
             0xb6 => (self.zero_page_y(), 4, 2),
@@ -198,6 +199,7 @@ impl<'a> CPU<'a> {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        let intermediate = self.system.read_byte(intermediate_address);
         self.test_negative(intermediate);
         self.test_zero(intermediate);
 
@@ -206,7 +208,7 @@ impl<'a> CPU<'a> {
 
     /// LoaD Y register
     fn ldy(&mut self, opcode: u8) {
-        let (intermediate, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xa0 => (self.immediate(), 2, 2),
             0xa4 => (self.zero_page(), 3, 2),
             0xb4 => (self.zero_page_x(), 4, 2),
@@ -217,6 +219,7 @@ impl<'a> CPU<'a> {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        let intermediate = self.system.read_byte(intermediate_address);
         self.test_negative(intermediate);
         self.test_zero(intermediate);
 
