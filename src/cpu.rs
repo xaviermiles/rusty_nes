@@ -347,8 +347,194 @@ impl<'a> CPU<'a> {
         self.pc += pc_increment;
 
         let intermediate = self.system.read_byte(intermediate_address) - 1;
-        self.test_zero(intermediate);
         self.test_negative(intermediate);
+        self.test_zero(intermediate);
+        self.system.write_byte(intermediate_address, intermediate);
+    }
+
+    /// DEcrement X
+    fn dex(&mut self, opcode: u8) {
+        self.clock += 2;
+        self.pc += 1;
+
+        self.x -= 1;
+        self.test_negative(self.x);
+        self.test_zero(self.x);
+    }
+
+    /// DEcrement Y
+    fn dey(&mut self, opcode: u8) {
+        self.clock += 2;
+        self.pc += 1;
+
+        self.y -= 1;
+        self.test_negative(self.y);
+        self.test_zero(self.y);
+    }
+
+    /// INCrement memory
+    fn inc(&mut self, opcode: u8) {
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0xe6 => (self.zero_page(), 5, 2),
+            0xf6 => (self.zero_page_x(), 6, 2),
+            0xee => (self.absolute(), 6, 3),
+            0xfe => (self.absolute_x(false), 7, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let intermediate = self.system.read_byte(intermediate_address) + 1;
+        self.test_negative(intermediate);
+        self.test_zero(intermediate);
+        self.system.write_byte(intermediate_address, intermediate);
+    }
+
+    /// INcrement X
+    fn inx(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+
+        self.x += 1;
+        self.test_negative(self.x);
+        self.test_zero(self.x);
+    }
+
+    /// INcrement Y
+    fn iny(&mut self) {
+        self.clock += 2;
+        self.pc += 1;
+
+        self.y += 1;
+        self.test_negative(self.y);
+        self.test_zero(self.y);
+    }
+
+    /// Arithmetic Shift Left
+    fn asl(&mut self, opcode: u8) {
+        // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
+        if opcode == 0x0a {
+            self.carry = self.a & 0x80 == 0x80;
+            self.a <<= 1;
+            self.test_negative(self.a);
+            self.test_zero(self.a);
+            self.clock += 2;
+            self.pc += 1;
+            return;
+        }
+
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0x06 => (self.zero_page(), 5, 2),
+            0x16 => (self.zero_page_x(), 6, 2),
+            0x0e => (self.absolute(), 6, 3),
+            0x1e => (self.absolute_x(false), 7, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let mut intermediate = self.system.read_byte(intermediate_address);
+        self.carry = (intermediate & 0x80) == 0x80;
+        intermediate <<= 1;
+        self.test_negative(intermediate);
+        self.test_zero(intermediate);
+        self.system.write_byte(intermediate_address, intermediate);
+    }
+
+    /// ROtate Left
+    fn rol(&mut self, opcode: u8) {
+        let carry_value = self.carry as u8;
+
+        // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
+        if opcode == 0x2a {
+            self.carry = self.a & 0x80 == 0x80;
+            self.a = self.a << 1 + carry_value;
+            self.test_negative(self.a);
+            self.test_zero(self.a);
+            self.clock += 2;
+            self.pc += 1;
+            return;
+        }
+
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0x26 => (self.zero_page(), 5, 2),
+            0x36 => (self.zero_page_x(), 6, 2),
+            0x2e => (self.absolute(), 6, 3),
+            0x3e => (self.absolute_x(false), 7, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let mut intermediate = self.system.read_byte(intermediate_address);
+        self.carry = (intermediate & 0x80) == 0x80;
+        intermediate = intermediate << 1 + carry_value;
+        self.test_negative(intermediate);
+        self.test_zero(intermediate);
+        self.system.write_byte(intermediate_address, intermediate);
+    }
+
+    ///Logical Shift Right
+    fn lsr(&mut self, opcode: u8) {
+        // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
+        if opcode == 0x4a {
+            self.carry = self.a & 0x01 == 0x01;
+            self.a >>= 1;
+            self.test_negative(self.a);
+            self.test_zero(self.a);
+            self.clock += 2;
+            self.pc += 1;
+            return;
+        }
+
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0x46 => (self.zero_page(), 5, 2),
+            0x56 => (self.zero_page_x(), 6, 2),
+            0x4e => (self.absolute(), 6, 3),
+            0x5e => (self.absolute_x(false), 7, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let mut intermediate = self.system.read_byte(intermediate_address);
+        self.carry = (intermediate & 0x01) == 0x01;
+        intermediate >>= 1;
+        self.test_negative(intermediate);
+        self.test_zero(intermediate);
+        self.system.write_byte(intermediate_address, intermediate);
+    }
+
+    /// ROtate Right
+    fn ror(&mut self, opcode: u8) {
+        let carry_value: u8 = if self.carry { 0x80 } else { 0 };
+
+        // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
+        if opcode == 0x6a {
+            self.carry = self.a & 0x01 == 0x01;
+            self.a >>= 1;
+            self.test_negative(self.a);
+            self.test_zero(self.a);
+            self.clock += 2;
+            self.pc += 1;
+            return;
+        }
+
+        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+            0x66 => (self.zero_page(), 5, 2),
+            0x76 => (self.zero_page_x(), 6, 2),
+            0x6e => (self.absolute(), 6, 3),
+            0x7e => (self.absolute_x(false), 7, 3),
+            _ => panic!("Unknown opcode"),
+        };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
+
+        let mut intermediate = self.system.read_byte(intermediate_address);
+        self.carry = (intermediate & 0x01) == 0x01;
+        intermediate = intermediate >> 1 + carry_value;
+        self.test_negative(intermediate);
+        self.test_zero(intermediate);
         self.system.write_byte(intermediate_address, intermediate);
     }
 
