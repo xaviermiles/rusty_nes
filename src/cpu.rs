@@ -73,6 +73,205 @@ impl<'a> CPU<'a> {
         print!("{}", if self.carry { "C" } else { "-" });
     }
 
+    pub fn run_opcode(&mut self) {
+        let opcode = self.system.read_byte(self.pc);
+        match opcode {
+            0x00 => self.brk(),
+            0x01 => self.ora(opcode),
+            0x04 => self.nop(),
+            0x05 => self.ora(opcode),
+            0x06 => self.asl(opcode),
+            0x08 => self.php(),
+            0x0c => self.nop(),
+            0x0d => self.ora(opcode),
+            0x0e => self.asl(opcode),
+
+            0x10 => self.bpl(),
+            0x11 => self.ora(opcode),
+            0x14 => self.nop(),
+            0x15 => self.ora(opcode),
+            0x16 => self.asl(opcode),
+            0x18 => self.clc(),
+            0x19 => self.ora(opcode),
+            0x1a => self.nop(),
+            0x1c => self.nop(),
+            0x1d => self.ora(opcode),
+            0x1e => self.asl(opcode),
+
+            0x20 => self.jsr(),
+            0x21 => self.and(opcode),
+            0x24 => self.bit(opcode),
+            0x25 => self.and(opcode),
+            0x26 => self.rol(opcode),
+            0x28 => self.php(),
+            0x29 => self.and(opcode),
+            0x2a => self.rol(opcode),
+            0x2c => self.bit(opcode),
+            0x2d => self.and(opcode),
+            0x2e => self.rol(opcode),
+
+            0x30 => self.bmi(),
+            0x31 => self.and(opcode),
+            0x34 => self.nop(),
+            0x35 => self.and(opcode),
+            0x36 => self.rol(opcode),
+            0x38 => self.sec(),
+            0x39 => self.and(opcode),
+            0x3a => self.nop(),
+            0x3c => self.nop(),
+            0x3d => self.and(opcode),
+            0x3e => self.rol(opcode),
+
+            0x40 => self.rti(),
+            0x41 => self.eor(opcode),
+            0x44 => self.nop(),
+            0x45 => self.eor(opcode),
+            0x46 => self.rol(opcode),
+            0x48 => self.pha(),
+            0x49 => self.eor(opcode),
+            0x4a => self.rol(opcode),
+            0x4c => self.bit(opcode),
+            0x4d => self.and(opcode),
+            0x4e => self.rol(opcode),
+
+            0x50 => self.bvc(),
+            0x51 => self.eor(opcode),
+            0x54 => self.nop(),
+            0x55 => self.eor(opcode),
+            0x56 => self.lsr(opcode),
+            0x58 => self.cli(),
+            0x59 => self.eor(opcode),
+            0x5a => self.nop(),
+            0x5c => self.nop(),
+            0x5d => self.eor(opcode),
+            0x5e => self.lsr(opcode),
+
+            0x60 => self.rts(),
+            0x61 => self.adc(opcode),
+            0x64 => self.nop(),
+            0x65 => self.adc(opcode),
+            0x66 => self.ror(opcode),
+            0x68 => self.pla(),
+            0x69 => self.adc(opcode),
+            0x6a => self.ror(opcode),
+            0x6c => self.jmp(opcode),
+            0x6d => self.adc(opcode),
+            0x6e => self.ror(opcode),
+
+            0x70 => self.bvs(),
+            0x71 => self.adc(opcode),
+            0x74 => self.nop(),
+            0x75 => self.adc(opcode),
+            0x76 => self.ror(opcode),
+            0x78 => self.sei(),
+            0x79 => self.adc(opcode),
+            0x7a => self.nop(),
+            0x7c => self.nop(),
+            0x7d => self.adc(opcode),
+            0x7e => self.ror(opcode),
+
+            0x80 => self.nop(),
+            0x81 => self.sta(opcode),
+            0x82 => self.nop(),
+            0x84 => self.sty(opcode),
+            0x85 => self.sta(opcode),
+            0x86 => self.stx(opcode),
+            0x88 => self.dey(),
+            0x89 => self.nop(),
+            0x8a => self.txa(),
+            0x8c => self.sty(opcode),
+            0x8d => self.sta(opcode),
+            0x8e => self.stx(opcode),
+
+            0x90 => self.bcc(),
+            0x91 => self.sta(opcode),
+            0x94 => self.sty(opcode),
+            0x95 => self.sta(opcode),
+            0x96 => self.stx(opcode),
+            0x98 => self.tya(),
+            0x99 => self.sta(opcode),
+            0x9a => self.txs(),
+            0x9d => self.sta(opcode),
+
+            0xa0 => self.ldy(opcode),
+            0xa1 => self.lda(opcode),
+            0xa2 => self.ldx(opcode),
+            0xa4 => self.ldy(opcode),
+            0xa5 => self.lda(opcode),
+            0xa6 => self.ldx(opcode),
+            0xa8 => self.tay(),
+            0xa9 => self.lda(opcode),
+            0xaa => self.tax(),
+            0xac => self.ldy(opcode),
+            0xad => self.lda(opcode),
+            0xae => self.ldx(opcode),
+
+            0xb0 => self.bcs(),
+            0xb1 => self.lda(opcode),
+            0xb4 => self.ldy(opcode),
+            0xb5 => self.lda(opcode),
+            0xb6 => self.ldx(opcode),
+            0xb8 => self.clv(),
+            0xb9 => self.lda(opcode),
+            0xba => self.tsx(),
+            0xbc => self.ldy(opcode),
+            0xbd => self.lda(opcode),
+            0xbe => self.ldx(opcode),
+
+            0xc0 => self.cpy(opcode),
+            0xc1 => self.cmp(opcode),
+            0xc2 => self.nop(),
+            0xc4 => self.cpy(opcode),
+            0xc5 => self.cmp(opcode),
+            0xc6 => self.dec(opcode),
+            0xc8 => self.iny(),
+            0xc9 => self.cmp(opcode),
+            0xca => self.dex(),
+            0xcc => self.cpy(opcode),
+            0xcd => self.cmp(opcode),
+            0xce => self.dec(opcode),
+
+            0xd0 => self.bne(),
+            0xd1 => self.cmp(opcode),
+            0xd4 => self.nop(),
+            0xd5 => self.cmp(opcode),
+            0xd6 => self.dec(opcode),
+            0xd8 => self.cld(),
+            0xd9 => self.cmp(opcode),
+            0xda => self.nop(),
+            0xdc => self.nop(),
+            0xdd => self.cmp(opcode),
+            0xde => self.dec(opcode),
+
+            0xe0 => self.cpx(opcode),
+            0xe1 => self.sbc(opcode),
+            0xe2 => self.nop(),
+            0xe4 => self.cpx(opcode),
+            0xe5 => self.sbc(opcode),
+            0xe6 => self.inc(opcode),
+            0xe8 => self.inx(),
+            0xe9 => self.sbc(opcode),
+            0xea => self.nop(),
+            0xec => self.cpx(opcode),
+            0xed => self.sbc(opcode),
+            0xee => self.inc(opcode),
+
+            0xf0 => self.beq(),
+            0xf1 => self.sbc(opcode),
+            0xf4 => self.nop(),
+            0xf5 => self.sbc(opcode),
+            0xf6 => self.inc(opcode),
+            0xf8 => self.sed(),
+            0xf9 => self.sbc(opcode),
+            0xfa => self.nop(),
+            0xfc => self.nop(),
+            0xfd => self.sbc(opcode),
+            0xfe => self.inc(opcode),
+
+            _ => panic!("Unknown opcode"),
+        }
+    }
+
     // Addressing modes --------------------------------------------------------------------------
     fn immediate(&mut self) -> u16 {
         let arg_address = self.pc + 1;
@@ -353,7 +552,7 @@ impl<'a> CPU<'a> {
     }
 
     /// DEcrement X
-    fn dex(&mut self, opcode: u8) {
+    fn dex(&mut self) {
         self.clock += 2;
         self.pc += 1;
 
@@ -363,7 +562,7 @@ impl<'a> CPU<'a> {
     }
 
     /// DEcrement Y
-    fn dey(&mut self, opcode: u8) {
+    fn dey(&mut self) {
         self.clock += 2;
         self.pc += 1;
 
