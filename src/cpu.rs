@@ -109,9 +109,9 @@ impl<'a> CPU<'a> {
         let address = (self.system.read_byte(arg_address) + self.x) as u16;
 
         let pre_index = self.system.read_word(address);
-        let page1 = pre_index >> 2;
+        let page1 = pre_index >> 8;
         let indirect_address = pre_index + self.y as u16;
-        let page2 = indirect_address >> 2;
+        let page2 = indirect_address >> 8;
         if extra_clock_for_page_fault && page1 != page2 {
             self.clock += 1;
         }
@@ -128,10 +128,10 @@ impl<'a> CPU<'a> {
     fn absolute_x(&mut self, extra_clock_for_page_fault: bool) -> u16 {
         let arg_address = self.pc + 1;
         let mut address = self.system.read_word(arg_address);
-        let page1 = address >> 2;
+        let page1 = address >> 8;
 
         address += self.x as u16;
-        let page2 = address >> 2;
+        let page2 = address >> 8;
         if extra_clock_for_page_fault && page1 != page2 {
             self.clock += 1;
         }
@@ -142,11 +142,11 @@ impl<'a> CPU<'a> {
     fn absolute_y(&mut self, extra_clock_for_page_fault: bool) -> u16 {
         let arg_address = self.pc + 1;
         let mut address = self.system.read_word(arg_address);
-        let page = address >> 2;
+        let page1 = address >> 8;
 
         address += self.y as u16;
-        let new_page = address >> 2;
-        if page != new_page {
+        let page2 = address >> 8;
+        if page1 != page2 {
             self.clock += 1;
         }
 
