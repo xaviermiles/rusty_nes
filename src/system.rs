@@ -64,7 +64,17 @@ impl System {
     }
 
     fn read_mapper_byte(&self, address: u16) -> u8 {
-        return 0;
+        if address >= 0x8000 && address <= 0xbfff {
+            // We know that `address` is in the first page
+            println!("path a");
+            return self.cart.prg_rom_pages[0][address as usize - 0x8000];
+        } else if address >= 0xc000 {
+            println!("path b");
+            return self.cart.prg_rom_pages[self.cart.prg_rom_pages.len() - 1]
+                [address as usize - 0xc000];
+        } else {
+            panic!("Cannot read byte at '{}' address from mapper", address);
+        }
     }
 
     fn write_mapper_byte(&self, address: u16, value: u8) {}

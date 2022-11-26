@@ -1,4 +1,5 @@
 use std::{
+    fmt::Debug,
     fs::File,
     io::{BufReader, Read},
 };
@@ -10,7 +11,6 @@ pub enum CartLoadStatus {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
 pub struct Cart {
     prg_rom: usize,
     chr_rom: usize,
@@ -22,8 +22,19 @@ pub struct Cart {
     hard_wired_four_screen_mode: bool,
 
     mapper: u8,
-    prg_rom_pages: Vec<Vec<u8>>,
-    chr_rom_pages: Vec<Vec<u8>>,
+    pub prg_rom_pages: Vec<Vec<u8>>,
+    pub chr_rom_pages: Vec<Vec<u8>>,
+}
+
+impl Debug for Cart {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Cart")
+            .field("prg_rom", &self.prg_rom)
+            .field("chr_rom", &self.chr_rom)
+            .field("mirroring", &self.mirroring)
+            .field("mapper", &self.mapper)
+            .finish()
+    }
 }
 
 #[derive(Debug)]
@@ -72,8 +83,7 @@ pub fn load_to_cart(filename: String) -> CartLoadStatus {
     for page in 0..prg_rom {
         let mut current_page = Vec::new();
         for offset in 0..prg_rom_page_size {
-            // TODO: this index shouldn't have "- 1" at the end
-            current_page.push(contents[current_start + page * prg_rom_page_size + offset - 1]);
+            current_page.push(contents[current_start + page * prg_rom_page_size + offset]);
         }
         prg_rom_pages.push(current_page);
     }
@@ -89,7 +99,7 @@ pub fn load_to_cart(filename: String) -> CartLoadStatus {
         chr_rom_pages.push(current_page);
     }
 
-    CartLoadStatus::Success(Cart {
+    let cart = Cart {
         prg_rom,
         chr_rom,
         mirroring,
@@ -99,5 +109,9 @@ pub fn load_to_cart(filename: String) -> CartLoadStatus {
         mapper,
         prg_rom_pages,
         chr_rom_pages,
-    })
+    };
+
+    println!("{:?}", cart);
+
+    CartLoadStatus::Success(cart)
 }
