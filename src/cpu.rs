@@ -274,38 +274,34 @@ impl<'a> CPU<'a> {
 
     // Addressing modes --------------------------------------------------------------------------
     fn immediate(&mut self) -> u16 {
-        let arg_address = self.pc + 1;
-        arg_address
+        self.pc + 1
     }
 
     fn zero_page(&mut self) -> u16 {
-        let arg_address = self.pc + 1;
-        let address = self.system.read_byte(arg_address) as u16;
-        address
+        let next_address = self.immediate();
+        self.system.read_byte(next_address) as u16
     }
 
     fn zero_page_x(&mut self) -> u16 {
-        let arg_address = self.pc + 1;
-        let address = (self.system.read_byte(arg_address) + self.x) as u16;
-        address
+        let next_address = self.immediate();
+        (self.system.read_byte(next_address) + self.x) as u16
     }
 
     fn zero_page_y(&mut self) -> u16 {
-        let arg_address = self.pc + 1;
-        let address = (self.system.read_byte(arg_address) + self.y) as u16;
-        address
+        let next_address = self.immediate();
+        (self.system.read_byte(next_address) + self.y) as u16
     }
 
     fn indirect_zero_page_x(&mut self) -> u16 {
-        let arg_address = self.pc + 1;
-        let address = (self.system.read_byte(arg_address) + self.x) as u16;
+        let next_address = self.immediate();
+        let address = (self.system.read_byte(next_address) + self.x) as u16;
         let indirect_address = self.system.read_word(address);
         indirect_address
     }
 
     fn indirect_zero_page_y(&mut self, extra_clock_for_page_fault: bool) -> u16 {
-        let arg_address = self.pc + 1;
-        let address = (self.system.read_byte(arg_address) + self.x) as u16;
+        let next_address = self.immediate();
+        let address = (self.system.read_byte(next_address) + self.x) as u16;
 
         let pre_index = self.system.read_word(address);
         let page1 = pre_index >> 8;
@@ -319,14 +315,13 @@ impl<'a> CPU<'a> {
     }
 
     fn absolute(&mut self) -> u16 {
-        let arg_address = self.pc + 1;
-        let address = self.system.read_word(arg_address);
-        address
+        let next_address = self.immediate();
+        self.system.read_word(next_address)
     }
 
     fn absolute_x(&mut self, extra_clock_for_page_fault: bool) -> u16 {
-        let arg_address = self.pc + 1;
-        let mut address = self.system.read_word(arg_address);
+        let next_address = self.immediate();
+        let mut address = self.system.read_word(next_address);
         let page1 = address >> 8;
 
         address += self.x as u16;
@@ -339,8 +334,8 @@ impl<'a> CPU<'a> {
     }
 
     fn absolute_y(&mut self, extra_clock_for_page_fault: bool) -> u16 {
-        let arg_address = self.pc + 1;
-        let mut address = self.system.read_word(arg_address);
+        let next_address = self.immediate();
+        let mut address = self.system.read_word(next_address);
         let page1 = address >> 8;
 
         address += self.y as u16;
@@ -1122,7 +1117,7 @@ impl<'a> CPU<'a> {
                 (address, 5)
             }
             _ => panic!("Unknown opcode"),
-        }
+        };
         self.clock += clock_increment;
         self.pc = address;
     }
