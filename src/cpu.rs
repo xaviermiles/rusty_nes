@@ -803,154 +803,49 @@ impl<'a> CPU<'a> {
 
     /// STore Accumulator
     fn sta(&mut self, opcode: u8) {
-        let arg_address = self.pc + 1;
-
-        let address = match opcode {
-            0x85 => {
-                // Zero page
-                self.clock += 3;
-                self.pc += 2;
-
-                let address = self.system.read_byte(arg_address);
-                address as u16
-            }
-            0x95 => {
-                // Zero page, x (zpx)
-                self.clock += 4;
-                self.pc += 2;
-
-                let address = self.system.read_byte(arg_address) + self.x;
-                // TODO: does this wrap around the zero page?
-                address as u16
-            }
-            0x8d => {
-                // Absolute (abs)
-                self.clock += 4;
-                self.pc += 3;
-
-                let address = self.system.read_word(arg_address);
-                address
-            }
-            0x9d => {
-                // Absolute, x (abx)
-                self.clock += 5;
-                self.pc += 3;
-
-                let address = self.system.read_word(arg_address);
-                address + self.x as u16
-            }
-            0x99 => {
-                // Absolute, y (aby)
-                self.clock += 5;
-                self.pc += 3;
-
-                let address = self.system.read_word(arg_address);
-                address + self.y as u16
-            }
-            0x81 => {
-                // Indirect zero page, x (izx)
-                self.clock += 6;
-                self.pc += 2;
-
-                let address = self.system.read_byte(arg_address) + self.x;
-                address as u16
-            }
-            0x91 => {
-                // Indirect zero page, y (izy)
-                self.clock += 6;
-                self.pc += 2;
-
-                let address = self.system.read_byte(arg_address);
-                let new_address = self.system.read_word(address as u16) + self.y as u16;
-                new_address
-            }
-            _ => {
-                panic!("Unknown opcode");
-            }
+        let (address, clock_increment, pc_increment) = match opcode {
+            0x85 => (self.zero_page(), 3, 2),
+            0x95 => (self.zero_page_x(), 4, 2),
+            0x8d => (self.absolute(), 4, 3),
+            0x9d => (self.absolute_x(false), 5, 3),
+            0x99 => (self.absolute_y(false), 5, 3),
+            0x81 => (self.indirect_zero_page_x(), 6, 2),
+            0x91 => (self.indirect_zero_page_y(false), 6, 2),
+            _ => panic!("Unknown opcode"),
         };
-
+        self.clock += clock_increment;
+        self.pc += pc_increment;
         self.system.write_byte(address, self.a);
     }
 
     /// STore X register
     fn stx(&mut self, opcode: u8) {
-        let arg_address = self.pc + 1;
-
-        let address = match opcode {
-            0x86 => {
-                // Zero page
-                self.clock += 3;
-                self.pc += 2;
-
-                let address = self.system.read_byte(arg_address);
-                address as u16
-            }
-            0x96 => {
-                // Zero page, y (zpy)
-                self.clock += 4;
-                self.pc += 2;
-
-                let address = self.system.read_byte(arg_address) + self.y;
-                // TODO: does this wrap around the zero page?
-                address as u16
-            }
-            0x8e => {
-                // Absolute (abs)
-                self.clock += 4;
-                self.pc += 3;
-
-                let address = self.system.read_word(arg_address);
-                address
-            }
-            _ => {
-                panic!("Unknown opcode");
-            }
+        let (address, clock_increment, pc_increment) = match opcode {
+            0x86 => (self.zero_page(), 3, 2),
+            0x96 => (self.zero_page_y(), 4, 2),
+            0x8e => (self.absolute(), 4, 3),
+            _ => panic!("Unknown opcode"),
         };
-
+        self.clock += clock_increment;
+        self.pc += pc_increment;
         self.system.write_byte(address, self.x);
     }
 
     /// STore Y register
     fn sty(&mut self, opcode: u8) {
-        let arg_address = self.pc + 1;
-
-        let address = match opcode {
-            0x84 => {
-                // Zero page
-                self.clock += 3;
-                self.pc += 2;
-
-                let address = self.system.read_byte(arg_address);
-                address as u16
-            }
-            0x94 => {
-                // Zero page, x (zpx)
-                self.clock += 4;
-                self.pc += 2;
-
-                let address = self.system.read_byte(arg_address) + self.x;
-                // TODO: does this wrap around the zero page?
-                address as u16
-            }
-            0x8c => {
-                // Absolute (abs)
-                self.clock += 4;
-                self.pc += 3;
-
-                let address = self.system.read_word(arg_address);
-                address
-            }
-            _ => {
-                panic!("Unknown opcode");
-            }
+        let (address, clock_increment, pc_increment) = match opcode {
+            0x84 => (self.zero_page(), 3, 2),
+            0x94 => (self.zero_page_y(), 4, 2),
+            0x8c => (self.absolute(), 4, 3),
+            _ => panic!("Unknown opcode"),
         };
-
+        self.clock += clock_increment;
+        self.pc += pc_increment;
         self.system.write_byte(address, self.y);
     }
 
     /// Transfer A to X
     fn tax(&mut self) {
-        // TODO: verify opcode is $AA?
         self.clock += 2;
         self.pc += 1;
 
@@ -1218,48 +1113,33 @@ impl<'a> CPU<'a> {
     fn jmp(&mut self, opcode: u8) {
         let arg_address = self.pc + 1;
 
-        match opcode {
-            0x24 => {
-                // Absolute (abs)
-                self.clock += 3;
-                let address = self.system.read_word(arg_address);
-                self.pc = address;
-            }
+        let (address, clock_increment) = match opcode {
+            0x24 => (self.absolute(), 3),
             0x2c => {
                 // Indirect absolute (ind)
-                self.clock += 5;
                 let indirect_address = self.system.read_word(arg_address);
                 let address = self.system.read_word(indirect_address);
-                self.pc = address;
+                (address, 5)
             }
             _ => panic!("Unknown opcode"),
         }
+        self.clock += clock_increment;
+        self.pc = address;
     }
 
     /// test BITs
     fn bit(&mut self, opcode: u8) {
         let arg_address = self.pc + 1;
 
-        let value = match opcode {
-            0x24 => {
-                // Zero page (zp)
-                self.clock += 3;
-                self.pc += 2;
-
-                let address = self.system.read_byte(arg_address);
-                self.system.read_byte(address as u16)
-            }
-            0x2c => {
-                // Absolute (abs)
-                self.clock += 4;
-                self.pc += 3;
-
-                let address = self.system.read_word(arg_address);
-                self.system.read_byte(address)
-            }
+        let (address, clock_increment, pc_increment) = match opcode {
+            0x24 => (self.zero_page(), 3, 2),
+            0x2c => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode"),
         };
+        self.clock += clock_increment;
+        self.pc += pc_increment;
 
+        let value = self.system.read_byte(address);
         self.zero = value & self.a == 0;
         self.negative = value & 0x80 == 0x80;
         self.overflow = value & 0x40 == 0x40;
