@@ -60,7 +60,7 @@ impl<'a> CPU<'a> {
         }
     }
 
-    pub fn pretty_print(&self) {
+    pub fn print_state(&self) {
         print!(
             "a: {:02x} x: {:02x} y: {:02x} pc: {:04x} s: {:02x} flags: ",
             self.a, self.x, self.y, self.pc, self.s
@@ -273,26 +273,26 @@ impl<'a> CPU<'a> {
     }
 
     // Addressing modes --------------------------------------------------------------------------
-    fn immediate(&mut self) -> u16 {
+    fn immediate(&self) -> u16 {
         self.pc + 1
     }
 
-    fn zero_page(&mut self) -> u16 {
+    fn zero_page(&self) -> u16 {
         let next_address = self.immediate();
         self.system.read_byte(next_address) as u16
     }
 
-    fn zero_page_x(&mut self) -> u16 {
+    fn zero_page_x(&self) -> u16 {
         let next_address = self.immediate();
         (self.system.read_byte(next_address) + self.x) as u16
     }
 
-    fn zero_page_y(&mut self) -> u16 {
+    fn zero_page_y(&self) -> u16 {
         let next_address = self.immediate();
         (self.system.read_byte(next_address) + self.y) as u16
     }
 
-    fn indirect_zero_page_x(&mut self) -> u16 {
+    fn indirect_zero_page_x(&self) -> u16 {
         let next_address = self.immediate();
         let address = (self.system.read_byte(next_address) + self.x) as u16;
         let indirect_address = self.system.read_word(address);
@@ -314,7 +314,7 @@ impl<'a> CPU<'a> {
         indirect_address
     }
 
-    fn absolute(&mut self) -> u16 {
+    fn absolute(&self) -> u16 {
         let next_address = self.immediate();
         self.system.read_word(next_address)
     }
