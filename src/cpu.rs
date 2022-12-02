@@ -1081,7 +1081,7 @@ impl<'a> CPU<'a> {
 
     // Jump/Flag commands ------------------------------------------------------------------------
     fn branch(&mut self) {
-        let arg_address = self.pc + 1;
+        let arg_address = self.immediate();
         let address = self.system.read_byte(arg_address) as i8;
 
         let prev_page = self.pc >> 8;
@@ -1191,7 +1191,7 @@ impl<'a> CPU<'a> {
 
         self.push_word(self.pc + 2);
 
-        let arg_address = self.pc + 1;
+        let arg_address = self.immediate();
         let address = self.system.read_word(arg_address);
     }
 
@@ -1207,7 +1207,7 @@ impl<'a> CPU<'a> {
     fn jmp(&mut self, opcode: u8) {
         self.debug_opcode("jmp");
 
-        let arg_address = self.pc + 1;
+        let arg_address = self.immediate();
 
         let (address, clock_increment) = match opcode {
             0x24 => (self.absolute(), 3),
@@ -1227,7 +1227,7 @@ impl<'a> CPU<'a> {
     fn bit(&mut self, opcode: u8) {
         self.debug_opcode("bit");
 
-        let arg_address = self.pc + 1;
+        let arg_address = self.immediate();
 
         let (address, clock_increment, pc_increment) = match opcode {
             0x24 => (self.zero_page(), 3, 2),
