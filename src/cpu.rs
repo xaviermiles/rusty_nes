@@ -1,3 +1,5 @@
+use log::debug;
+
 use crate::system::System;
 
 /// The 2A03 NES CPU core, which is based on the 6502 processor
@@ -71,6 +73,11 @@ impl<'a> CPU<'a> {
         print!("{}", if self.interrupt_disable { "I" } else { "-" });
         print!("{}", if self.zero { "Z" } else { "-" });
         print!("{}", if self.carry { "C" } else { "-" });
+        println!();
+    }
+
+    fn debug_opcode(&self, opcode_name: &str) {
+        debug!("{}", opcode_name);
     }
 
     pub fn run_opcode(&mut self) {
@@ -268,7 +275,7 @@ impl<'a> CPU<'a> {
             0xfd => self.sbc(opcode),
             0xfe => self.inc(opcode),
 
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         }
     }
 
@@ -359,6 +366,8 @@ impl<'a> CPU<'a> {
     // Logical and arithmetic commands -----------------------------------------------------------
     /// bitwise OR with Accumulator
     fn ora(&mut self, opcode: u8) {
+        self.debug_opcode("ora");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0x09 => (self.immediate(), 2, 2),
             0x05 => (self.zero_page(), 3, 2),
@@ -368,7 +377,7 @@ impl<'a> CPU<'a> {
             0x0d => (self.absolute(), 4, 3),
             0x1d => (self.absolute_x(true), 4, 3),
             0x19 => (self.absolute_y(true), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -380,6 +389,8 @@ impl<'a> CPU<'a> {
 
     /// bitwise AND with accumulator
     fn and(&mut self, opcode: u8) {
+        self.debug_opcode("and");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0x29 => (self.immediate(), 2, 2),
             0x25 => (self.zero_page(), 3, 2),
@@ -389,7 +400,7 @@ impl<'a> CPU<'a> {
             0x2d => (self.absolute(), 4, 3),
             0x3d => (self.absolute_x(true), 4, 3),
             0x39 => (self.absolute_y(true), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -401,6 +412,8 @@ impl<'a> CPU<'a> {
 
     /// bitwise Exclusive OR
     fn eor(&mut self, opcode: u8) {
+        self.debug_opcode("eor");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0x49 => (self.immediate(), 2, 2),
             0x45 => (self.zero_page(), 3, 2),
@@ -410,7 +423,7 @@ impl<'a> CPU<'a> {
             0x4d => (self.absolute(), 4, 3),
             0x5d => (self.absolute_x(true), 4, 3),
             0x59 => (self.absolute_y(true), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -422,6 +435,8 @@ impl<'a> CPU<'a> {
 
     /// ADd with Carry
     fn adc(&mut self, opcode: u8) {
+        self.debug_opcode("adc");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0x69 => (self.immediate(), 2, 2),
             0x65 => (self.zero_page(), 3, 2),
@@ -431,7 +446,7 @@ impl<'a> CPU<'a> {
             0x6d => (self.absolute(), 4, 3),
             0x7d => (self.absolute_x(true), 4, 3),
             0x79 => (self.absolute_y(true), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -448,6 +463,8 @@ impl<'a> CPU<'a> {
 
     /// SuBtract with Carry
     fn sbc(&mut self, opcode: u8) {
+        self.debug_opcode("sbc");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xe9 => (self.immediate(), 2, 2),
             0xe5 => (self.zero_page(), 3, 2),
@@ -457,7 +474,7 @@ impl<'a> CPU<'a> {
             0xed => (self.absolute(), 4, 3),
             0xfd => (self.absolute_x(true), 4, 3),
             0xf9 => (self.absolute_y(true), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -474,6 +491,8 @@ impl<'a> CPU<'a> {
 
     /// CoMPare accumulator
     fn cmp(&mut self, opcode: u8) {
+        self.debug_opcode("cmp");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xc9 => (self.immediate(), 2, 2),
             0xc5 => (self.zero_page(), 3, 2),
@@ -483,7 +502,7 @@ impl<'a> CPU<'a> {
             0xcd => (self.absolute(), 4, 3),
             0xdd => (self.absolute_x(true), 4, 3),
             0xd9 => (self.absolute_y(true), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -496,11 +515,13 @@ impl<'a> CPU<'a> {
 
     /// ComPare X register
     fn cpx(&mut self, opcode: u8) {
+        self.debug_opcode("cpx");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xc0 => (self.immediate(), 2, 2),
             0xc4 => (self.zero_page(), 3, 2),
             0xcc => (self.absolute(), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -513,11 +534,13 @@ impl<'a> CPU<'a> {
 
     /// ComPare Y register
     fn cpy(&mut self, opcode: u8) {
+        self.debug_opcode("cpy");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xe0 => (self.immediate(), 2, 2),
             0xe4 => (self.zero_page(), 3, 2),
             0xec => (self.absolute(), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -530,12 +553,14 @@ impl<'a> CPU<'a> {
 
     /// DECrement memory
     fn dec(&mut self, opcode: u8) {
+        self.debug_opcode("dec");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xc6 => (self.zero_page(), 5, 2),
             0xd6 => (self.zero_page_x(), 6, 2),
             0xce => (self.absolute(), 6, 3),
             0xde => (self.absolute_x(false), 7, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -548,6 +573,8 @@ impl<'a> CPU<'a> {
 
     /// DEcrement X
     fn dex(&mut self) {
+        self.debug_opcode("dex");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -558,6 +585,8 @@ impl<'a> CPU<'a> {
 
     /// DEcrement Y
     fn dey(&mut self) {
+        self.debug_opcode("dey");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -568,12 +597,14 @@ impl<'a> CPU<'a> {
 
     /// INCrement memory
     fn inc(&mut self, opcode: u8) {
+        self.debug_opcode("inc");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xe6 => (self.zero_page(), 5, 2),
             0xf6 => (self.zero_page_x(), 6, 2),
             0xee => (self.absolute(), 6, 3),
             0xfe => (self.absolute_x(false), 7, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -586,6 +617,8 @@ impl<'a> CPU<'a> {
 
     /// INcrement X
     fn inx(&mut self) {
+        self.debug_opcode("inc");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -596,6 +629,8 @@ impl<'a> CPU<'a> {
 
     /// INcrement Y
     fn iny(&mut self) {
+        self.debug_opcode("iny");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -606,6 +641,8 @@ impl<'a> CPU<'a> {
 
     /// Arithmetic Shift Left
     fn asl(&mut self, opcode: u8) {
+        self.debug_opcode("asl");
+
         // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
         if opcode == 0x0a {
             self.carry = self.a & 0x80 == 0x80;
@@ -622,7 +659,7 @@ impl<'a> CPU<'a> {
             0x16 => (self.zero_page_x(), 6, 2),
             0x0e => (self.absolute(), 6, 3),
             0x1e => (self.absolute_x(false), 7, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -637,6 +674,8 @@ impl<'a> CPU<'a> {
 
     /// ROtate Left
     fn rol(&mut self, opcode: u8) {
+        self.debug_opcode("rol");
+
         let carry_value = self.carry as u8;
 
         // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
@@ -655,7 +694,7 @@ impl<'a> CPU<'a> {
             0x36 => (self.zero_page_x(), 6, 2),
             0x2e => (self.absolute(), 6, 3),
             0x3e => (self.absolute_x(false), 7, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -670,6 +709,8 @@ impl<'a> CPU<'a> {
 
     ///Logical Shift Right
     fn lsr(&mut self, opcode: u8) {
+        self.debug_opcode("lsr");
+
         // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
         if opcode == 0x4a {
             self.carry = self.a & 0x01 == 0x01;
@@ -686,7 +727,7 @@ impl<'a> CPU<'a> {
             0x56 => (self.zero_page_x(), 6, 2),
             0x4e => (self.absolute(), 6, 3),
             0x5e => (self.absolute_x(false), 7, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -701,6 +742,8 @@ impl<'a> CPU<'a> {
 
     /// ROtate Right
     fn ror(&mut self, opcode: u8) {
+        self.debug_opcode("ror");
+
         let carry_value: u8 = if self.carry { 0x80 } else { 0 };
 
         // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
@@ -719,7 +762,7 @@ impl<'a> CPU<'a> {
             0x76 => (self.zero_page_x(), 6, 2),
             0x6e => (self.absolute(), 6, 3),
             0x7e => (self.absolute_x(false), 7, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -735,6 +778,8 @@ impl<'a> CPU<'a> {
     // Move commands -----------------------------------------------------------------------------
     /// LoaD Accumulator
     fn lda(&mut self, opcode: u8) {
+        self.debug_opcode("lda");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xa9 => (self.immediate(), 2, 2),
             0xa5 => (self.zero_page(), 3, 2),
@@ -744,7 +789,7 @@ impl<'a> CPU<'a> {
             0xb9 => (self.absolute_y(true), 4, 2),
             0xa1 => (self.indirect_zero_page_x(), 6, 4),
             0xb1 => (self.indirect_zero_page_y(true), 6, 2),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -758,13 +803,15 @@ impl<'a> CPU<'a> {
 
     /// LoaD X register
     fn ldx(&mut self, opcode: u8) {
+        self.debug_opcode("ldx");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xa2 => (self.immediate(), 2, 2),
             0xa6 => (self.zero_page(), 3, 2),
             0xb6 => (self.zero_page_y(), 4, 2),
             0xae => (self.absolute(), 4, 3),
             0xbe => (self.absolute_y(true), 4, 2),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -778,13 +825,15 @@ impl<'a> CPU<'a> {
 
     /// LoaD Y register
     fn ldy(&mut self, opcode: u8) {
+        self.debug_opcode("ldy");
+
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xa0 => (self.immediate(), 2, 2),
             0xa4 => (self.zero_page(), 3, 2),
             0xb4 => (self.zero_page_x(), 4, 2),
             0x8c => (self.absolute(), 4, 3),
             0xbc => (self.absolute_x(true), 4, 2),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -798,6 +847,8 @@ impl<'a> CPU<'a> {
 
     /// STore Accumulator
     fn sta(&mut self, opcode: u8) {
+        self.debug_opcode("sta");
+
         let (address, clock_increment, pc_increment) = match opcode {
             0x85 => (self.zero_page(), 3, 2),
             0x95 => (self.zero_page_x(), 4, 2),
@@ -806,7 +857,7 @@ impl<'a> CPU<'a> {
             0x99 => (self.absolute_y(false), 5, 3),
             0x81 => (self.indirect_zero_page_x(), 6, 2),
             0x91 => (self.indirect_zero_page_y(false), 6, 2),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -815,11 +866,13 @@ impl<'a> CPU<'a> {
 
     /// STore X register
     fn stx(&mut self, opcode: u8) {
+        self.debug_opcode("stx");
+
         let (address, clock_increment, pc_increment) = match opcode {
             0x86 => (self.zero_page(), 3, 2),
             0x96 => (self.zero_page_y(), 4, 2),
             0x8e => (self.absolute(), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -828,11 +881,13 @@ impl<'a> CPU<'a> {
 
     /// STore Y register
     fn sty(&mut self, opcode: u8) {
+        self.debug_opcode("sty");
+
         let (address, clock_increment, pc_increment) = match opcode {
             0x84 => (self.zero_page(), 3, 2),
             0x94 => (self.zero_page_y(), 4, 2),
             0x8c => (self.absolute(), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -841,6 +896,8 @@ impl<'a> CPU<'a> {
 
     /// Transfer A to X
     fn tax(&mut self) {
+        self.debug_opcode("tax");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -852,6 +909,8 @@ impl<'a> CPU<'a> {
 
     /// Transfer X to A
     fn txa(&mut self) {
+        self.debug_opcode("txa");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -863,6 +922,8 @@ impl<'a> CPU<'a> {
 
     /// Transfer A to Y
     fn tay(&mut self) {
+        self.debug_opcode("tay");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -874,6 +935,8 @@ impl<'a> CPU<'a> {
 
     /// Transfer X to A
     fn tya(&mut self) {
+        self.debug_opcode("tya");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -885,6 +948,8 @@ impl<'a> CPU<'a> {
 
     /// Transfer S to X
     fn tsx(&mut self) {
+        self.debug_opcode("tsx");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -896,6 +961,8 @@ impl<'a> CPU<'a> {
 
     /// Transfer X to S
     fn txs(&mut self) {
+        self.debug_opcode("txs");
+
         self.clock += 2;
         self.pc += 1;
 
@@ -904,6 +971,8 @@ impl<'a> CPU<'a> {
 
     /// PuLl Accumulator
     fn pla(&mut self) {
+        self.debug_opcode("pla");
+
         self.clock += 4;
         self.pc += 1;
 
@@ -918,6 +987,8 @@ impl<'a> CPU<'a> {
 
     /// PusH Accumulator
     fn pha(&mut self) {
+        self.debug_opcode("pha");
+
         self.clock += 3;
         self.pc += 1;
 
@@ -947,6 +1018,8 @@ impl<'a> CPU<'a> {
 
     /// PuLl Processor status
     fn plp(&mut self) {
+        self.debug_opcode("plp");
+
         self.clock += 4;
         self.pc += 1;
 
@@ -998,6 +1071,8 @@ impl<'a> CPU<'a> {
 
     /// PusH Processor status
     fn php(&mut self) {
+        self.debug_opcode("php");
+
         self.clock += 3;
         self.pc += 1;
 
@@ -1031,46 +1106,64 @@ impl<'a> CPU<'a> {
 
     /// Branch on PLus
     fn bpl(&mut self) {
+        self.debug_opcode("bpl");
+
         self.branch_if(!self.negative);
     }
 
     /// Branch on MInus
     fn bmi(&mut self) {
+        self.debug_opcode("bmi");
+
         self.branch_if(self.negative);
     }
 
     /// Branch on oVerflow Clear
     fn bvc(&mut self) {
+        self.debug_opcode("bvc");
+
         self.branch_if(!self.overflow);
     }
 
     /// Branch on oVerflow Set
     fn bvs(&mut self) {
+        self.debug_opcode("bvs");
+
         self.branch_if(self.overflow);
     }
 
     /// Branch on Carry Clear
     fn bcc(&mut self) {
+        self.debug_opcode("bcc");
+
         self.branch_if(!self.carry);
     }
 
     /// Branch on Carry Set
     fn bcs(&mut self) {
+        self.debug_opcode("bcs");
+
         self.branch_if(self.carry);
     }
 
     /// Branch on Not Equal
     fn bne(&mut self) {
+        self.debug_opcode("bne");
+
         self.branch_if(!self.zero);
     }
 
     /// Branch on EQual
     fn beq(&mut self) {
+        self.debug_opcode("beq");
+
         self.branch_if(self.zero);
     }
 
     /// BReaK
     fn brk(&mut self) {
+        self.debug_opcode("brk");
+
         self.clock += 7;
 
         self.push_word(self.pc);
@@ -1083,6 +1176,8 @@ impl<'a> CPU<'a> {
 
     /// ReTurn from Interrupt
     fn rti(&mut self) {
+        self.debug_opcode("rti");
+
         self.clock += 6;
         self.pull_status();
         self.pull_pc();
@@ -1090,6 +1185,8 @@ impl<'a> CPU<'a> {
 
     /// Jump to SubRoutine
     fn jsr(&mut self) {
+        self.debug_opcode("jsr");
+
         self.clock += 6;
 
         self.push_word(self.pc + 2);
@@ -1100,12 +1197,16 @@ impl<'a> CPU<'a> {
 
     /// ReTurn from Subroutine
     fn rts(&mut self) {
+        self.debug_opcode("rts");
+
         self.clock += 6;
         self.pull_pc()
     }
 
     /// JuMP
     fn jmp(&mut self, opcode: u8) {
+        self.debug_opcode("jmp");
+
         let arg_address = self.pc + 1;
 
         let (address, clock_increment) = match opcode {
@@ -1116,7 +1217,7 @@ impl<'a> CPU<'a> {
                 let address = self.system.read_word(indirect_address);
                 (address, 5)
             }
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc = address;
@@ -1124,12 +1225,14 @@ impl<'a> CPU<'a> {
 
     /// test BITs
     fn bit(&mut self, opcode: u8) {
+        self.debug_opcode("bit");
+
         let arg_address = self.pc + 1;
 
         let (address, clock_increment, pc_increment) = match opcode {
             0x24 => (self.zero_page(), 3, 2),
             0x2c => (self.absolute(), 4, 3),
-            _ => panic!("Unknown opcode"),
+            _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
@@ -1142,6 +1245,8 @@ impl<'a> CPU<'a> {
 
     /// CLear Carry
     fn clc(&mut self) {
+        self.debug_opcode("clc");
+
         self.clock += 2;
         self.pc += 1;
         self.carry = false;
@@ -1149,6 +1254,8 @@ impl<'a> CPU<'a> {
 
     /// SEt Carry
     fn sec(&mut self) {
+        self.debug_opcode("sec");
+
         self.clock += 2;
         self.pc += 1;
         self.carry = true;
@@ -1156,6 +1263,8 @@ impl<'a> CPU<'a> {
 
     /// CLear Decimal
     fn cld(&mut self) {
+        self.debug_opcode("cld");
+
         self.clock += 2;
         self.pc += 1;
         self.decimal = false;
@@ -1163,6 +1272,8 @@ impl<'a> CPU<'a> {
 
     // SEt Decimal
     fn sed(&mut self) {
+        self.debug_opcode("sed");
+
         self.clock += 2;
         self.pc += 1;
         self.decimal = true;
@@ -1170,6 +1281,8 @@ impl<'a> CPU<'a> {
 
     /// CLear Interrupt
     fn cli(&mut self) {
+        self.debug_opcode("cli");
+
         self.clock += 2;
         self.pc += 1;
         self.interrupt_disable = false;
@@ -1177,6 +1290,8 @@ impl<'a> CPU<'a> {
 
     /// SEt Interrupt
     fn sei(&mut self) {
+        self.debug_opcode("sei");
+
         self.clock += 2;
         self.pc += 1;
         self.interrupt_disable = true;
@@ -1184,6 +1299,8 @@ impl<'a> CPU<'a> {
 
     /// CLear oVerflow
     fn clv(&mut self) {
+        self.debug_opcode("clv");
+
         self.clock += 2;
         self.pc += 1;
         self.overflow = false;
@@ -1191,6 +1308,8 @@ impl<'a> CPU<'a> {
 
     /// No OPeration
     fn nop(&mut self) {
+        self.debug_opcode("nop");
+
         self.clock += 2;
         self.pc += 1;
     }

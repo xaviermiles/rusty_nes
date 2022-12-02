@@ -6,9 +6,12 @@ use clap::Parser;
 struct RustyArgs {
     /// Filename of the ROM
     filename: String,
+    // TODO: Argument to control logging level?
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
     let args = RustyArgs::parse();
 
     let mut system = System::new(args.filename);
