@@ -1084,6 +1084,9 @@ impl<'a> CPU<'a> {
         let arg_address = self.immediate();
         let address = self.system.read_byte(arg_address) as i8;
 
+        // For this pc increment, see https://github.com/jntrnr/jaktnesmonster/pull/1
+        self.pc += 2;
+
         let prev_page = self.pc >> 8;
         // TODO: test this
         self.pc = (self.pc as i16 + address as i16) as u16;
