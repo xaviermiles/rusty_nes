@@ -1,4 +1,4 @@
-use rusty_nes::{System, CPU};
+use rusty_nes::CPU;
 
 use clap::Parser;
 
@@ -14,8 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = RustyArgs::parse();
 
-    let mut system = System::new(args.filename);
-    let mut cpu = CPU::new(&mut system);
+    let mut cpu = CPU::new(args.filename);
     for _ in 1..100 {
         cpu.print_state();
         cpu.run_opcode();

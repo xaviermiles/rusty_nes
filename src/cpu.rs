@@ -5,7 +5,7 @@ use crate::system::System;
 /// The 2A03 NES CPU core, which is based on the 6502 processor
 ///
 /// See: <https://www.nesdev.org/wiki/CPU_registers>
-pub struct CPU<'a> {
+pub struct CPU {
     /// Accumulator
     a: u8,
 
@@ -31,17 +31,18 @@ pub struct CPU<'a> {
     negative: bool,
 
     /// System
-    system: &'a mut System,
+    system: System,
 
     /// Clock
     clock: u64,
 }
 
-impl<'a> CPU<'a> {
+impl CPU {
     /// Create a new CPU, in the power up state
     ///
     /// See: <https://www.nesdev.org/wiki/CPU_power_up_state>
-    pub fn new(system: &'a mut System) -> Self {
+    pub fn new(filename: String) -> Self {
+        let system = System::new(filename);
         let reset_vector = (&system.read_word(0xfffc)).clone();
 
         Self {
