@@ -10,13 +10,12 @@ struct RustyArgs {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+    simple_logger::SimpleLogger::new().init().unwrap();
 
     let args = RustyArgs::parse();
 
     let mut cpu = CPU::new(args.filename);
-    for _ in 1..100 {
-        cpu.print_state();
+    for _ in 1..20 {
         cpu.run_opcode();
     }
 

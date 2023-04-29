@@ -1,5 +1,3 @@
-use log::debug;
-
 use crate::system::System;
 
 /// The 2A03 NES CPU core, which is based on the 6502 processor
@@ -35,6 +33,9 @@ pub struct CPU {
 
     /// Clock
     clock: u64,
+
+    /// Helper for storing debug state
+    debug_state: String,
 }
 
 impl CPU {
@@ -60,28 +61,36 @@ impl CPU {
             negative: false,
             system,
             clock: 0,
+            debug_state: "".to_string(),
         }
     }
 
-    pub fn print_state(&self) {
-        print!(
-            "a: {:02x} x: {:02x} y: {:02x} pc: {:04x} s: {:02x} flags: ",
+    fn save_debug_state(&mut self) {
+        let counters = format!(
+            "a: {:02x} x: {:02x} y: {:02x} pc: {:04x} s: {:02x}",
             self.a, self.x, self.y, self.pc, self.s
         );
-        print!("{}", if self.negative { "N" } else { "-" });
-        print!("{}", if self.overflow { "V" } else { "-" });
-        print!("{}", if self.decimal { "D" } else { "-" });
-        print!("{}", if self.interrupt_disable { "I" } else { "-" });
-        print!("{}", if self.zero { "Z" } else { "-" });
-        print!("{}", if self.carry { "C" } else { "-" });
-        println!();
+        let flags = format!(
+            "{}{}{}{}{}{}",
+            if self.negative { "N" } else { "-" },
+            if self.overflow { "V" } else { "-" },
+            if self.decimal { "D" } else { "-" },
+            if self.interrupt_disable { "I" } else { "-" },
+            if self.zero { "Z" } else { "-" },
+            if self.carry { "C" } else { "-" }
+        );
+        self.debug_state = format!("{counters} flags: {flags}");
     }
 
-    fn debug_opcode(&self, opcode_name: &str) {
-        debug!("{}", opcode_name);
+    #[inline]
+    fn debug_opcode<S: Into<String> + std::fmt::Display>(&self, opcode_info: S) {
+        log::info!("{}  |  {}", self.debug_state, opcode_info);
     }
 
     pub fn run_opcode(&mut self) {
+        // Save debug state before altering the counters/registers
+        self.save_debug_state();
+
         let opcode = self.system.read_byte(self.pc);
         match opcode {
             0x00 => self.brk(),
@@ -779,8 +788,6 @@ impl CPU {
     // Move commands -----------------------------------------------------------------------------
     /// LoaD Accumulator
     fn lda(&mut self, opcode: u8) {
-        self.debug_opcode("lda");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xa9 => (self.immediate(), 2, 2),
             0xa5 => (self.zero_page(), 3, 2),
@@ -799,13 +806,12 @@ impl CPU {
         self.test_negative(intermediate);
         self.test_zero(intermediate);
 
+        self.debug_opcode(format!("lda #${:0>2x}", intermediate_address));
         self.a = intermediate;
     }
 
     /// LoaD X register
     fn ldx(&mut self, opcode: u8) {
-        self.debug_opcode("ldx");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xa2 => (self.immediate(), 2, 2),
             0xa6 => (self.zero_page(), 3, 2),
@@ -821,13 +827,12 @@ impl CPU {
         self.test_negative(intermediate);
         self.test_zero(intermediate);
 
+        self.debug_opcode(format!("ldx #${:02x}", intermediate));
         self.x = intermediate;
     }
 
     /// LoaD Y register
     fn ldy(&mut self, opcode: u8) {
-        self.debug_opcode("ldy");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xa0 => (self.immediate(), 2, 2),
             0xa4 => (self.zero_page(), 3, 2),
@@ -843,6 +848,7 @@ impl CPU {
         self.test_negative(intermediate);
         self.test_zero(intermediate);
 
+        self.debug_opcode(format!("ldy #${:02x}", intermediate));
         self.y = intermediate;
     }
 
@@ -1081,13 +1087,15 @@ impl CPU {
     }
 
     // Jump/Flag commands ------------------------------------------------------------------------
-    fn branch(&mut self) {
+    /// Common function for branching opcodes. The opcode name is just passed in for debugging.
+    fn branch(&mut self, opcode_name: &str) {
         let arg_address = self.immediate();
         let address = self.system.read_byte(arg_address) as i8;
 
         // For this pc increment, see https://github.com/jntrnr/jaktnesmonster/pull/1
         self.pc += 2;
 
+        self.debug_opcode(format!("{} {:0>4x}", opcode_name, address));
         let prev_page = self.pc >> 8;
         // TODO: test this
         self.pc = (self.pc as i16 + address as i16) as u16;
@@ -1099,9 +1107,9 @@ impl CPU {
         }
     }
 
-    fn branch_if(&mut self, condition: bool) {
+    fn branch_if(&mut self, condition: bool, opcode_name: &str) {
         if condition {
-            self.branch();
+            self.branch(opcode_name);
         } else {
             self.clock += 2;
             self.pc += 2;
@@ -1110,58 +1118,42 @@ impl CPU {
 
     /// Branch on PLus
     fn bpl(&mut self) {
-        self.debug_opcode("bpl");
-
-        self.branch_if(!self.negative);
+        self.branch_if(!self.negative, "bpl");
     }
 
     /// Branch on MInus
     fn bmi(&mut self) {
-        self.debug_opcode("bmi");
-
-        self.branch_if(self.negative);
+        self.branch_if(self.negative, "bmi");
     }
 
     /// Branch on oVerflow Clear
     fn bvc(&mut self) {
-        self.debug_opcode("bvc");
-
-        self.branch_if(!self.overflow);
+        self.branch_if(!self.overflow, "bvc");
     }
 
     /// Branch on oVerflow Set
     fn bvs(&mut self) {
-        self.debug_opcode("bvs");
-
-        self.branch_if(self.overflow);
+        self.branch_if(self.overflow, "bvs");
     }
 
     /// Branch on Carry Clear
     fn bcc(&mut self) {
-        self.debug_opcode("bcc");
-
-        self.branch_if(!self.carry);
+        self.branch_if(!self.carry, "bcc");
     }
 
     /// Branch on Carry Set
     fn bcs(&mut self) {
-        self.debug_opcode("bcs");
-
-        self.branch_if(self.carry);
+        self.branch_if(self.carry, "bcs");
     }
 
     /// Branch on Not Equal
     fn bne(&mut self) {
-        self.debug_opcode("bne");
-
-        self.branch_if(!self.zero);
+        self.branch_if(!self.zero, "bne");
     }
 
     /// Branch on EQual
     fn beq(&mut self) {
-        self.debug_opcode("beq");
-
-        self.branch_if(self.zero);
+        self.branch_if(self.zero, "beq");
     }
 
     /// BReaK

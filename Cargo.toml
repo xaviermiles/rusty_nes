@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 clap = {version = "4.0.16", features = ["derive"]}
-env_logger = "0.10.0"
 fermium = "20022.0.0"
 log = "0.4.17"
+# Do not include timestamps for logging
+simple_logger = { version = "4.1", default-features = false, features = ["colors"] }
