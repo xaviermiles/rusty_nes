@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::cart::CartLoadResult;
 use crate::system::System;
 
@@ -85,7 +87,7 @@ impl CPU {
     }
 
     #[inline]
-    fn debug_opcode<S: Into<String> + std::fmt::Display>(&self, opcode_info: S) {
+    fn debug_opcode<S: Into<String> + Display>(&self, opcode_info: S) {
         log::info!("{}    {}", self.debug_state, opcode_info);
     }
 
@@ -1223,16 +1225,9 @@ impl CPU {
 
     /// JuMP
     fn jmp(&mut self, opcode: u8) {
-        let arg_address = self.immediate();
-
         let (address, clock_increment) = match opcode {
             0x24 => (self.absolute(), 3),
-            0x2c => {
-                // Indirect absolute (ind)
-                let indirect_address = self.system.read_word(arg_address);
-                let address = self.system.read_word(indirect_address);
-                (address, 5)
-            }
+            0x2c => (self.system.read_word(self.absolute()), 5), // Indirect absolute (ind)
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
