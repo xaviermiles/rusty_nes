@@ -397,7 +397,7 @@ impl CPU {
     // Logical and arithmetic commands -----------------------------------------------------------
     /// bitwise OR with Accumulator
     fn ora(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0x09 => (self.immediate(), 2, 2),
             0x05 => (self.zero_page(), 3, 2),
             0x15 => (self.zero_page_x(), 4, 2),
@@ -408,7 +408,7 @@ impl CPU {
             0x19 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("ora", intermediate_address);
@@ -420,7 +420,7 @@ impl CPU {
 
     /// bitwise AND with accumulator
     fn and(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0x29 => (self.immediate(), 2, 2),
             0x25 => (self.zero_page(), 3, 2),
             0x35 => (self.zero_page_x(), 4, 2),
@@ -431,7 +431,7 @@ impl CPU {
             0x39 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode(format!("and {}", intermediate_address));
@@ -443,7 +443,7 @@ impl CPU {
 
     /// bitwise Exclusive OR
     fn eor(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0x49 => (self.immediate(), 2, 2),
             0x45 => (self.zero_page(), 3, 2),
             0x55 => (self.zero_page_x(), 4, 2),
@@ -454,7 +454,7 @@ impl CPU {
             0x59 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("eor", intermediate_address);
@@ -466,7 +466,7 @@ impl CPU {
 
     /// ADd with Carry
     fn adc(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0x69 => (self.immediate(), 2, 2),
             0x65 => (self.zero_page(), 3, 2),
             0x75 => (self.zero_page_x(), 4, 2),
@@ -477,7 +477,7 @@ impl CPU {
             0x79 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("adc", intermediate_address);
@@ -494,7 +494,7 @@ impl CPU {
 
     /// SuBtract with Carry
     fn sbc(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0xe9 => (self.immediate(), 2, 2),
             0xe5 => (self.zero_page(), 3, 2),
             0xf5 => (self.zero_page_x(), 4, 2),
@@ -505,7 +505,7 @@ impl CPU {
             0xf9 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("sbc", intermediate_address);
@@ -522,7 +522,7 @@ impl CPU {
 
     /// CoMPare accumulator
     fn cmp(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0xc9 => (self.immediate(), 2, 2),
             0xc5 => (self.zero_page(), 3, 2),
             0xd5 => (self.zero_page_x(), 4, 2),
@@ -533,7 +533,7 @@ impl CPU {
             0xd9 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("cmp", intermediate_address);
@@ -546,13 +546,13 @@ impl CPU {
 
     /// ComPare X register
     fn cpx(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0xc0 => (self.immediate(), 2, 2),
             0xc4 => (self.zero_page(), 3, 2),
             0xcc => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("cpx", intermediate_address);
@@ -565,13 +565,13 @@ impl CPU {
 
     /// ComPare Y register
     fn cpy(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0xe0 => (self.immediate(), 2, 2),
             0xe4 => (self.zero_page(), 3, 2),
             0xec => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("cpy", intermediate_address);
@@ -584,14 +584,14 @@ impl CPU {
 
     /// DECrement memory
     fn dec(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0xc6 => (self.zero_page(), 5, 2),
             0xd6 => (self.zero_page_x(), 6, 2),
             0xce => (self.absolute(), 6, 3),
             0xde => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("dec", intermediate_address);
@@ -628,14 +628,14 @@ impl CPU {
 
     /// INCrement memory
     fn inc(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0xe6 => (self.zero_page(), 5, 2),
             0xf6 => (self.zero_page_x(), 6, 2),
             0xee => (self.absolute(), 6, 3),
             0xfe => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("inc", intermediate_address);
@@ -685,14 +685,14 @@ impl CPU {
             return;
         }
 
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0x06 => (self.zero_page(), 5, 2),
             0x16 => (self.zero_page_x(), 6, 2),
             0x0e => (self.absolute(), 6, 3),
             0x1e => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("asl {}", intermediate_address);
@@ -722,14 +722,14 @@ impl CPU {
             return;
         }
 
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0x26 => (self.zero_page(), 5, 2),
             0x36 => (self.zero_page_x(), 6, 2),
             0x2e => (self.absolute(), 6, 3),
             0x3e => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("rol {}", intermediate_address);
@@ -757,14 +757,14 @@ impl CPU {
             return;
         }
 
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0x46 => (self.zero_page(), 5, 2),
             0x56 => (self.zero_page_x(), 6, 2),
             0x4e => (self.absolute(), 6, 3),
             0x5e => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("lsr {}", intermediate_address);
@@ -794,14 +794,14 @@ impl CPU {
             return;
         }
 
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0x66 => (self.zero_page(), 5, 2),
             0x76 => (self.zero_page_x(), 6, 2),
             0x6e => (self.absolute(), 6, 3),
             0x7e => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("ror", intermediate_address);
@@ -817,7 +817,7 @@ impl CPU {
     // Move commands -----------------------------------------------------------------------------
     /// LoaD Accumulator
     fn lda(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0xa9 => (self.immediate(), 2, 2),
             0xa5 => (self.zero_page(), 3, 2),
             0xb5 => (self.zero_page_x(), 4, 2),
@@ -828,7 +828,7 @@ impl CPU {
             0xb1 => (self.indirect_zero_page_y(true), 6, 2),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("lda", intermediate_address);
@@ -842,7 +842,7 @@ impl CPU {
 
     /// LoaD X register
     fn ldx(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0xa2 => (self.immediate(), 2, 2),
             0xa6 => (self.zero_page(), 3, 2),
             0xb6 => (self.zero_page_y(), 4, 2),
@@ -850,7 +850,7 @@ impl CPU {
             0xbe => (self.absolute_y(true), 4, 2),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("ldx", intermediate_address);
@@ -864,7 +864,7 @@ impl CPU {
 
     /// LoaD Y register
     fn ldy(&mut self, opcode: u8) {
-        let (intermediate_address, clock_increment, pc_increment) = match opcode {
+        let (intermediate_address, cycles, pc_increment) = match opcode {
             0xa0 => (self.immediate(), 2, 2),
             0xa4 => (self.zero_page(), 3, 2),
             0xb4 => (self.zero_page_x(), 4, 2),
@@ -872,7 +872,7 @@ impl CPU {
             0xbc => (self.absolute_x(true), 4, 2),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("ldy", intermediate_address);
@@ -886,7 +886,7 @@ impl CPU {
 
     /// STore Accumulator
     fn sta(&mut self, opcode: u8) {
-        let (address, clock_increment, pc_increment) = match opcode {
+        let (address, cycles, pc_increment) = match opcode {
             0x85 => (self.zero_page(), 3, 2),
             0x95 => (self.zero_page_x(), 4, 2),
             0x8d => (self.absolute(), 4, 3),
@@ -896,7 +896,7 @@ impl CPU {
             0x91 => (self.indirect_zero_page_y(false), 6, 2),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("sta", address);
@@ -906,13 +906,13 @@ impl CPU {
 
     /// STore X register
     fn stx(&mut self, opcode: u8) {
-        let (address, clock_increment, pc_increment) = match opcode {
+        let (address, cycles, pc_increment) = match opcode {
             0x86 => (self.zero_page(), 3, 2),
             0x96 => (self.zero_page_y(), 4, 2),
             0x8e => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("stx", address);
@@ -922,13 +922,13 @@ impl CPU {
 
     /// STore Y register
     fn sty(&mut self, opcode: u8) {
-        let (address, clock_increment, pc_increment) = match opcode {
+        let (address, cycles, pc_increment) = match opcode {
             0x84 => (self.zero_page(), 3, 2),
             0x94 => (self.zero_page_y(), 4, 2),
             0x8c => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("sty", address);
@@ -1238,7 +1238,7 @@ impl CPU {
 
     /// JuMP
     fn jmp(&mut self, opcode: u8) {
-        let (address, clock_increment) = match opcode {
+        let (address, cycles) = match opcode {
             0x24 => (self.absolute(), 3),
             0x2c => {
                 // Indirect absolute (ind)
@@ -1247,7 +1247,7 @@ impl CPU {
             }
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
 
         self.debug_opcode_with_address("jmp", address);
 
@@ -1256,12 +1256,12 @@ impl CPU {
 
     /// test BITs
     fn bit(&mut self, opcode: u8) {
-        let (address, clock_increment, pc_increment) = match opcode {
+        let (address, cycles, pc_increment) = match opcode {
             0x24 => (self.zero_page(), 3, 2),
             0x2c => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.tick(clock_increment);
+        self.tick(cycles);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("bit", address);
