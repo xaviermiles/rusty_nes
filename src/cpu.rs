@@ -312,30 +312,29 @@ impl CPU {
         self.pc + 1
     }
 
-    fn zero_page(&self) -> u16 {
+    fn general_zero_page(&self, to_add: u8) -> u16 {
         let next_address = self.immediate();
-        self.system.read_byte(next_address) as u16
+        (self.system.read_byte(next_address) + to_add) as u16
+    }
+
+    fn zero_page(&self) -> u16 {
+        self.general_zero_page(0)
     }
 
     fn zero_page_x(&self) -> u16 {
-        let next_address = self.immediate();
-        (self.system.read_byte(next_address) + self.x) as u16
+        self.general_zero_page(self.x)
     }
 
     fn zero_page_y(&self) -> u16 {
-        let next_address = self.immediate();
-        (self.system.read_byte(next_address) + self.y) as u16
+        self.general_zero_page(self.y)
     }
 
     fn indirect_zero_page_x(&self) -> u16 {
-        let next_address = self.immediate();
-        let address = (self.system.read_byte(next_address) + self.x) as u16;
-        self.system.read_word(address)
+        self.system.read_word(self.zero_page_x())
     }
 
     fn indirect_zero_page_y(&mut self, extra_clock_for_page_fault: bool) -> u16 {
-        let next_address = self.immediate();
-        let address = (self.system.read_byte(next_address) + self.x) as u16;
+        let address = self.zero_page();
 
         let pre_index = self.system.read_word(address);
         let page1 = pre_index >> 8;
@@ -354,8 +353,7 @@ impl CPU {
     }
 
     fn absolute_x(&mut self, extra_clock_for_page_fault: bool) -> u16 {
-        let next_address = self.immediate();
-        let mut address = self.system.read_word(next_address);
+        let mut address = self.absolute();
         let page1 = address >> 8;
 
         address += self.x as u16;
@@ -368,8 +366,7 @@ impl CPU {
     }
 
     fn absolute_y(&mut self, extra_clock_for_page_fault: bool) -> u16 {
-        let next_address = self.immediate();
-        let mut address = self.system.read_word(next_address);
+        let mut address = self.absolute();
         let page1 = address >> 8;
 
         address += self.y as u16;
