@@ -1,5 +1,5 @@
 use crate::apu::APU;
-use crate::cart::{self, Cart, CartLoadStatus};
+use crate::cart::{self, Cart, CartLoadResult};
 use crate::ppu::PPU;
 
 #[derive(Debug)]
@@ -11,24 +11,16 @@ pub struct System {
 }
 
 impl System {
-    pub fn new(filename: String) -> Self {
-        let cart = match cart::load_to_cart(filename) {
-            CartLoadStatus::Success(cart) => cart,
-            CartLoadStatus::FileNotARom => {
-                panic!("Not a valid ROM file.")
-            }
-            CartLoadStatus::FileNotFound => {
-                panic!("ROM file not found.")
-            }
-        };
+    pub fn new(filename: String) -> CartLoadResult<Self> {
+        let cart = cart::load_to_cart(filename)?;
 
         // TODO: power-on state of `scratch_ram` is funkier than this
-        System {
+        Ok(System {
             scratch_ram: Box::new([0; 0x800]),
             ppu: PPU::new(),
             apu: APU::new(),
             cart,
-        }
+        })
     }
 
     pub fn read_byte(&self, address: u16) -> u8 {
@@ -75,5 +67,5 @@ impl System {
         }
     }
 
-    fn write_mapper_byte(&self, address: u16, value: u8) {}
+    fn write_mapper_byte(&self, _address: u16, _value: u8) {}
 }
