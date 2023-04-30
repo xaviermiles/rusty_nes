@@ -67,8 +67,8 @@ impl CPU {
 
     fn save_debug_state(&mut self) {
         let counters = format!(
-            "a: {:02x} x: {:02x} y: {:02x} pc: {:04x} s: {:02x}",
-            self.a, self.x, self.y, self.pc, self.s
+            "{:04x}    a: {:02x} x: {:02x} y: {:02x} s: {:02x}",
+            self.pc, self.a, self.x, self.y, self.s
         );
         let flags = format!(
             "{}{}{}{}{}{}",
@@ -79,12 +79,12 @@ impl CPU {
             if self.zero { "Z" } else { "-" },
             if self.carry { "C" } else { "-" }
         );
-        self.debug_state = format!("{counters} flags: {flags}");
+        self.debug_state = format!("{counters}    {flags}");
     }
 
     #[inline]
     fn debug_opcode<S: Into<String> + std::fmt::Display>(&self, opcode_info: S) {
-        log::info!("{}  |  {}", self.debug_state, opcode_info);
+        log::info!("{}    {}", self.debug_state, opcode_info);
     }
 
     pub fn run_opcode(&mut self) {
