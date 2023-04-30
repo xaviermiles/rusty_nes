@@ -1,3 +1,5 @@
+/// Audio Processing Unit (APU)
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
 pub struct APU {}
 

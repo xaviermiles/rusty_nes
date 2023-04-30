@@ -6,6 +6,7 @@ use crate::system::System;
 /// The 2A03 NES CPU core, which is based on the 6502 processor
 ///
 /// See: <https://www.nesdev.org/wiki/CPU_registers>
+#[allow(clippy::upper_case_acronyms)]
 pub struct CPU {
     /// Accumulator
     a: u8,

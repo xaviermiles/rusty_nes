@@ -1,3 +1,5 @@
+/// Picture Processing Unit (PPU)
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug)]
 pub struct PPU {}
 

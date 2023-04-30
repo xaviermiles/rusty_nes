@@ -26,6 +26,7 @@ pub enum Event {
     Quit,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct SDL {
     window: *mut SDL_Window,
     renderer: *mut SDL_Renderer,
