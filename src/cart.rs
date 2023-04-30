@@ -101,7 +101,7 @@ pub fn load_to_cart(filename: String) -> CartLoadResult<Cart> {
         chr_rom_pages.push(current_page);
     }
 
-    let cart = Cart {
+    Ok(Cart {
         prg_rom,
         chr_rom,
         mirroring,
@@ -111,9 +111,5 @@ pub fn load_to_cart(filename: String) -> CartLoadResult<Cart> {
         mapper,
         prg_rom_pages,
         chr_rom_pages,
-    };
-
-    println!("{:?}", cart);
-
-    Ok(cart)
+    })
 }
