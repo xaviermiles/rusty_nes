@@ -26,6 +26,7 @@ pub enum Event {
     Quit,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct SDL {
     window: *mut SDL_Window,
     renderer: *mut SDL_Renderer,
@@ -34,8 +35,8 @@ pub struct SDL {
 impl SDL {
     pub fn construct() -> Self {
         Self {
-            window: 0 as *mut SDL_Window,
-            renderer: 0 as *mut SDL_Renderer,
+            window: std::ptr::null_mut::<SDL_Window>(),
+            renderer: std::ptr::null_mut::<SDL_Renderer>(),
         }
     }
 
