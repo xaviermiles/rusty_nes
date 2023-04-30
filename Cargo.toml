@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 clap = {version = "4.0", features = ["derive"]}
-fermium = "22605.0"
+fermium = "20022.0"
