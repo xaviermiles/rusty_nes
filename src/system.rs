@@ -20,6 +20,9 @@ impl System {
             CartLoadStatus::FileNotFound => {
                 panic!("ROM file not found.")
             }
+            CartLoadStatus::IoError(io_err) => {
+                panic!("IO Error: {}", io_err);
+            }
         };
 
         // TODO: power-on state of `scratch_ram` is funkier than this

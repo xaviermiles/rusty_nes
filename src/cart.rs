@@ -8,6 +8,7 @@ pub enum CartLoadStatus {
     Success(Cart),
     FileNotARom,
     FileNotFound,
+    IoError(std::io::Error),
 }
 
 #[allow(dead_code)]
@@ -53,9 +54,9 @@ pub fn load_to_cart(filename: String) -> CartLoadStatus {
     };
     let mut buf_reader = BufReader::new(file);
     let mut contents: Vec<u8> = Vec::new();
-    buf_reader
-        .read_to_end(&mut contents)
-        .expect("TODO: make this return an actual error");
+    if let Err(err) = buf_reader.read_to_end(&mut contents) {
+        return CartLoadStatus::IoError(err);
+    }
 
     // Check that this is a valid ROM file
     if &contents[0..3] != b"NES" || contents[3] != 0x1a {
