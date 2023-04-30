@@ -45,7 +45,7 @@ impl CPU {
     /// See: <https://www.nesdev.org/wiki/CPU_power_up_state>
     pub fn new(filename: String) -> CartLoadResult<Self> {
         let system = System::new(filename)?;
-        let reset_vector = (&system.read_word(0xfffc)).clone();
+        let reset_vector = system.read_word(0xfffc);
 
         Ok(Self {
             a: 0,
@@ -305,8 +305,7 @@ impl CPU {
     fn indirect_zero_page_x(&self) -> u16 {
         let next_address = self.immediate();
         let address = (self.system.read_byte(next_address) + self.x) as u16;
-        let indirect_address = self.system.read_word(address);
-        indirect_address
+        self.system.read_word(address)
     }
 
     fn indirect_zero_page_y(&mut self, extra_clock_for_page_fault: bool) -> u16 {
