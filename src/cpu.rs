@@ -40,13 +40,14 @@ pub struct CPU {
 
     /// Helper for storing debug state
     debug_state: String,
+    debug_enabled: bool,
 }
 
 impl CPU {
     /// Create a new CPU, in the power up state
     ///
     /// See: <https://www.nesdev.org/wiki/CPU_power_up_state>
-    pub fn new(filename: String) -> CartLoadResult<Self> {
+    pub fn new(filename: String, debug_enabled: bool) -> CartLoadResult<Self> {
         let system = System::new(filename)?;
         let reset_vector = system.read_word(0xfffc);
 
@@ -65,11 +66,16 @@ impl CPU {
             negative: false,
             system,
             clock: 0,
-            debug_state: "".to_string(),
+            debug_state: "".to_string(), // this should always be updated before debugging anyway
+            debug_enabled,
         })
     }
 
     fn save_debug_state(&mut self) {
+        if !self.debug_enabled {
+            return;
+        }
+
         let counters = format!(
             "{:04x}    a: {:02x} x: {:02x} y: {:02x} s: {:02x}",
             self.pc, self.a, self.x, self.y, self.s
@@ -88,7 +94,10 @@ impl CPU {
 
     #[inline]
     fn debug_opcode<S: Into<String> + Display>(&self, opcode_info: S) {
-        log::info!("{}    {}", self.debug_state, opcode_info);
+        if !self.debug_enabled {
+            return;
+        }
+        println!("{}    {}", self.debug_state, opcode_info);
     }
 
     #[inline]
