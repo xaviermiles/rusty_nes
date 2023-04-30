@@ -50,13 +50,13 @@ impl System {
     pub fn read_word(&self, address: u16) -> u16 {
         let mut output: u16 = 0;
         output += self.read_byte(address + 1) as u16;
-        output = output << 8;
+        output <<= 8;
         output += self.read_byte(address) as u16;
         output
     }
 
     fn read_mapper_byte(&self, address: u16) -> u8 {
-        if address >= 0x8000 && address <= 0xbfff {
+        if (0x8000..=0xbfff).contains(&address) {
             // We know that `address` is in the first page
             self.cart.prg_rom_pages[0][address as usize - 0x8000]
         } else if address >= 0xc000 {

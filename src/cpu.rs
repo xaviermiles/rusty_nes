@@ -455,7 +455,7 @@ impl CPU {
 
         let intermediate =
             self.a as i16 + self.system.read_byte(intermediate_address) as i16 + !self.carry as i16;
-        self.overflow = intermediate < -128 || intermediate > 127;
+        self.overflow = !(-128..=127).contains(&intermediate);
         self.carry = (intermediate as u16) & 0xff00 != 0;
         self.a = intermediate as u8;
 
@@ -483,7 +483,7 @@ impl CPU {
 
         let intermediate =
             self.a as i16 - self.system.read_byte(intermediate_address) as i16 - !self.carry as i16;
-        self.overflow = intermediate < -128 || intermediate > 127;
+        self.overflow = !(-128..=127).contains(&intermediate);
         self.carry = (intermediate as u16) & 0xff00 != 0;
         self.a = intermediate as u8;
 
@@ -683,7 +683,7 @@ impl CPU {
         // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
         if opcode == 0x2a {
             self.carry = self.a & 0x80 == 0x80;
-            self.a = self.a << 1 + carry_value;
+            self.a <<= 1 + carry_value;
             self.test_negative(self.a);
             self.test_zero(self.a);
             self.clock += 2;
@@ -703,7 +703,7 @@ impl CPU {
 
         let mut intermediate = self.system.read_byte(intermediate_address);
         self.carry = (intermediate & 0x80) == 0x80;
-        intermediate = intermediate << 1 + carry_value;
+        intermediate <<= 1 + carry_value;
         self.test_negative(intermediate);
         self.test_zero(intermediate);
         self.system.write_byte(intermediate_address, intermediate);
@@ -771,7 +771,7 @@ impl CPU {
 
         let mut intermediate = self.system.read_byte(intermediate_address);
         self.carry = (intermediate & 0x01) == 0x01;
-        intermediate = intermediate >> 1 + carry_value;
+        intermediate >>= 1 + carry_value;
         self.test_negative(intermediate);
         self.test_zero(intermediate);
         self.system.write_byte(intermediate_address, intermediate);
