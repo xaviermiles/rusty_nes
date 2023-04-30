@@ -1,5 +1,5 @@
 use crate::apu::APU;
-use crate::cart::{self, Cart, CartLoadError};
+use crate::cart::{self, Cart, CartLoadResult};
 use crate::ppu::PPU;
 
 #[derive(Debug)]
@@ -11,26 +11,16 @@ pub struct System {
 }
 
 impl System {
-    pub fn new(filename: String) -> Self {
-        let cart = cart::load_to_cart(filename).unwrap_or_else(|err| match err {
-            CartLoadError::FileNotARom => {
-                panic!("Not a valid ROM file.")
-            }
-            CartLoadError::FileNotFound => {
-                panic!("ROM file not found.")
-            }
-            CartLoadError::IoError(io_err) => {
-                panic!("IO Error: {}", io_err);
-            }
-        });
+    pub fn new(filename: String) -> CartLoadResult<Self> {
+        let cart = cart::load_to_cart(filename)?;
 
         // TODO: power-on state of `scratch_ram` is funkier than this
-        System {
+        Ok(System {
             scratch_ram: Box::new([0; 0x800]),
             ppu: PPU::new(),
             apu: APU::new(),
             cart,
-        }
+        })
     }
 
     pub fn read_byte(&self, address: u16) -> u8 {

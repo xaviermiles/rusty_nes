@@ -1,5 +1,6 @@
 use log::debug;
 
+use crate::cart::CartLoadResult;
 use crate::system::System;
 
 /// The 2A03 NES CPU core, which is based on the 6502 processor
@@ -41,11 +42,11 @@ impl CPU {
     /// Create a new CPU, in the power up state
     ///
     /// See: <https://www.nesdev.org/wiki/CPU_power_up_state>
-    pub fn new(filename: String) -> Self {
-        let system = System::new(filename);
+    pub fn new(filename: String) -> CartLoadResult<Self> {
+        let system = System::new(filename)?;
         let reset_vector = (&system.read_word(0xfffc)).clone();
 
-        Self {
+        Ok(Self {
             a: 0,
             x: 0,
             y: 0,
@@ -60,7 +61,7 @@ impl CPU {
             negative: false,
             system,
             clock: 0,
-        }
+        })
     }
 
     pub fn print_state(&self) {

@@ -7,6 +7,7 @@ mod sdl;
 mod system;
 mod video;
 
+pub use cart::{CartLoadError, CartLoadResult};
 pub use cpu::CPU;
 use sdl::SDL;
 pub use system::System;
