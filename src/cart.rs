@@ -4,12 +4,13 @@ use std::{
     io::{BufReader, Read},
 };
 
-pub enum CartLoadStatus {
-    Success(Cart),
+pub enum CartLoadError {
     FileNotARom,
     FileNotFound,
     IoError(std::io::Error),
 }
+
+pub type CartLoadResult<T> = Result<T, CartLoadError>;
 
 #[allow(dead_code)]
 pub struct Cart {
@@ -45,22 +46,22 @@ pub enum Mirroring {
 }
 
 /// Load contents of file to Cart
-pub fn load_to_cart(filename: String) -> CartLoadStatus {
+pub fn load_to_cart(filename: String) -> CartLoadResult<Cart> {
     let file = match File::open(filename) {
         Ok(file) => file,
         Err(_) => {
-            return CartLoadStatus::FileNotFound;
+            return Err(CartLoadError::FileNotFound);
         }
     };
     let mut buf_reader = BufReader::new(file);
     let mut contents: Vec<u8> = Vec::new();
     if let Err(err) = buf_reader.read_to_end(&mut contents) {
-        return CartLoadStatus::IoError(err);
+        return Err(CartLoadError::IoError(err));
     }
 
     // Check that this is a valid ROM file
     if &contents[0..3] != b"NES" || contents[3] != 0x1a {
-        return CartLoadStatus::FileNotARom;
+        return Err(CartLoadError::FileNotARom);
     }
 
     let prg_rom = contents[4] as usize;
@@ -114,5 +115,5 @@ pub fn load_to_cart(filename: String) -> CartLoadStatus {
 
     println!("{:?}", cart);
 
-    CartLoadStatus::Success(cart)
+    Ok(cart)
 }
