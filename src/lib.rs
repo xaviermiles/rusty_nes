@@ -9,8 +9,8 @@ mod video;
 
 pub use cart::{CartLoadError, CartLoadResult};
 pub use cpu::CPU;
+
 use sdl::SDL;
-pub use system::System;
 
 const WINDOW_WIDTH: i32 = 600;
 
