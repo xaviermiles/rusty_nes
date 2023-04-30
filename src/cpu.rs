@@ -48,7 +48,7 @@ impl CPU {
     ///
     /// See: <https://www.nesdev.org/wiki/CPU_power_up_state>
     pub fn new(filename: String, debug_enabled: bool) -> CartLoadResult<Self> {
-        let system = System::new(filename)?;
+        let mut system = System::new(filename)?;
         let reset_vector = system.read_word(0xfffc);
 
         Ok(Self {
@@ -312,25 +312,26 @@ impl CPU {
         self.pc + 1
     }
 
-    fn general_zero_page(&self, to_add: u8) -> u16 {
+    fn general_zero_page(&mut self, to_add: u8) -> u16 {
         let next_address = self.immediate();
         (self.system.read_byte(next_address) + to_add) as u16
     }
 
-    fn zero_page(&self) -> u16 {
+    fn zero_page(&mut self) -> u16 {
         self.general_zero_page(0)
     }
 
-    fn zero_page_x(&self) -> u16 {
+    fn zero_page_x(&mut self) -> u16 {
         self.general_zero_page(self.x)
     }
 
-    fn zero_page_y(&self) -> u16 {
+    fn zero_page_y(&mut self) -> u16 {
         self.general_zero_page(self.y)
     }
 
-    fn indirect_zero_page_x(&self) -> u16 {
-        self.system.read_word(self.zero_page_x())
+    fn indirect_zero_page_x(&mut self) -> u16 {
+        let address = self.zero_page_x();
+        self.system.read_word(address)
     }
 
     fn indirect_zero_page_y(&mut self, extra_clock_for_page_fault: bool) -> u16 {
@@ -347,7 +348,7 @@ impl CPU {
         indirect_address
     }
 
-    fn absolute(&self) -> u16 {
+    fn absolute(&mut self) -> u16 {
         let next_address = self.immediate();
         self.system.read_word(next_address)
     }
@@ -1233,7 +1234,11 @@ impl CPU {
     fn jmp(&mut self, opcode: u8) {
         let (address, clock_increment) = match opcode {
             0x24 => (self.absolute(), 3),
-            0x2c => (self.system.read_word(self.absolute()), 5), // Indirect absolute (ind)
+            0x2c => {
+                // Indirect absolute (ind)
+                let address = self.absolute();
+                (self.system.read_word(address), 5)
+            }
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
