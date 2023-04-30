@@ -67,5 +67,5 @@ impl System {
         }
     }
 
-    fn write_mapper_byte(&self, address: u16, value: u8) {}
+    fn write_mapper_byte(&self, _address: u16, _value: u8) {}
 }

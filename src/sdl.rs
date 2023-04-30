@@ -20,6 +20,7 @@ pub enum Key {
 }
 
 pub enum Event {
+    #[allow(dead_code)] // TODO: Will KeyUp be necessary?
     KeyUp(Key),
     KeyDown(Key),
     Quit,

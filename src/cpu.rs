@@ -112,7 +112,7 @@ impl CPU {
             0x24 => self.bit(opcode),
             0x25 => self.and(opcode),
             0x26 => self.rol(opcode),
-            0x28 => self.php(),
+            0x28 => self.plp(),
             0x29 => self.and(opcode),
             0x2a => self.rol(opcode),
             0x2c => self.bit(opcode),
@@ -349,7 +349,7 @@ impl CPU {
 
         address += self.y as u16;
         let page2 = address >> 8;
-        if page1 != page2 {
+        if extra_clock_for_page_fault && page1 != page2 {
             self.clock += 1;
         }
 
@@ -1197,7 +1197,7 @@ impl CPU {
         self.push_word(self.pc + 2);
 
         let arg_address = self.immediate();
-        let address = self.system.read_word(arg_address);
+        self.pc = self.system.read_word(arg_address);
     }
 
     /// ReTurn from Subroutine
@@ -1231,8 +1231,6 @@ impl CPU {
     /// test BITs
     fn bit(&mut self, opcode: u8) {
         self.debug_opcode("bit");
-
-        let arg_address = self.immediate();
 
         let (address, clock_increment, pc_increment) = match opcode {
             0x24 => (self.zero_page(), 3, 2),

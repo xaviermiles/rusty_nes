@@ -1,4 +1,3 @@
-#![allow(dead_code, unused_variables)] // quieter :^)
 mod apu;
 mod cart;
 mod cpu;
