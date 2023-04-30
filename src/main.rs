@@ -6,15 +6,16 @@ use clap::Parser;
 struct RustyArgs {
     /// Filename of the ROM
     filename: String,
-    // TODO: Argument to control logging level?
+
+    /// Whether to disable the debugger mode
+    #[arg(short, long, action)]
+    nodebug: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
-
     let args = RustyArgs::parse();
 
-    let mut cpu = CPU::new(args.filename).unwrap_or_else(|err| match err {
+    let mut cpu = CPU::new(args.filename, !args.nodebug).unwrap_or_else(|err| match err {
         CartLoadError::FileNotARom => {
             panic!("Not a valid ROM file.")
         }
@@ -26,7 +27,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
     for _ in 1..100 {
-        cpu.print_state();
         cpu.run_opcode();
     }
 
