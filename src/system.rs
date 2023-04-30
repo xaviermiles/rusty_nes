@@ -23,6 +23,11 @@ impl System {
         })
     }
 
+    /// Tick the system clock by a number of `cycles`.
+    pub fn tick(&mut self, cycles: u64) {
+        self.ppu.tick(cycles);
+    }
+
     pub fn read_byte(&mut self, address: u16) -> u8 {
         if address < 0x2000 {
             self.scratch_ram[(address & 0x7ff) as usize]

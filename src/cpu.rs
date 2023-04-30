@@ -71,6 +71,12 @@ impl CPU {
         })
     }
 
+    /// Tick the internal clocks by a number of `cycles`.
+    fn tick(&mut self, cycles: u64) {
+        self.clock += cycles;
+        self.system.tick(3 * cycles);
+    }
+
     fn save_debug_state(&mut self) {
         if !self.debug_enabled {
             return;
@@ -342,7 +348,7 @@ impl CPU {
         let indirect_address = pre_index + self.y as u16;
         let page2 = indirect_address >> 8;
         if extra_clock_for_page_fault && page1 != page2 {
-            self.clock += 1;
+            self.tick(1);
         }
 
         indirect_address
@@ -360,7 +366,7 @@ impl CPU {
         address += self.x as u16;
         let page2 = address >> 8;
         if extra_clock_for_page_fault && page1 != page2 {
-            self.clock += 1;
+            self.tick(1);
         }
 
         address
@@ -373,7 +379,7 @@ impl CPU {
         address += self.y as u16;
         let page2 = address >> 8;
         if extra_clock_for_page_fault && page1 != page2 {
-            self.clock += 1;
+            self.tick(1);
         }
 
         address
@@ -402,7 +408,7 @@ impl CPU {
             0x19 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("ora", intermediate_address);
@@ -425,7 +431,7 @@ impl CPU {
             0x39 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode(format!("and {}", intermediate_address));
@@ -448,7 +454,7 @@ impl CPU {
             0x59 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("eor", intermediate_address);
@@ -471,7 +477,7 @@ impl CPU {
             0x79 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("adc", intermediate_address);
@@ -499,7 +505,7 @@ impl CPU {
             0xf9 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("sbc", intermediate_address);
@@ -527,7 +533,7 @@ impl CPU {
             0xd9 => (self.absolute_y(true), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("cmp", intermediate_address);
@@ -546,7 +552,7 @@ impl CPU {
             0xcc => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("cpx", intermediate_address);
@@ -565,7 +571,7 @@ impl CPU {
             0xec => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("cpy", intermediate_address);
@@ -585,7 +591,7 @@ impl CPU {
             0xde => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("dec", intermediate_address);
@@ -600,7 +606,7 @@ impl CPU {
     fn dex(&mut self) {
         self.debug_opcode("dex");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.x -= 1;
@@ -612,7 +618,7 @@ impl CPU {
     fn dey(&mut self) {
         self.debug_opcode("dey");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.y -= 1;
@@ -629,7 +635,7 @@ impl CPU {
             0xfe => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("inc", intermediate_address);
@@ -644,7 +650,7 @@ impl CPU {
     fn inx(&mut self) {
         self.debug_opcode("inc");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.x += 1;
@@ -656,7 +662,7 @@ impl CPU {
     fn iny(&mut self) {
         self.debug_opcode("iny");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.y += 1;
@@ -674,7 +680,7 @@ impl CPU {
             self.a <<= 1;
             self.test_negative(self.a);
             self.test_zero(self.a);
-            self.clock += 2;
+            self.tick(2);
             self.pc += 1;
             return;
         }
@@ -686,7 +692,7 @@ impl CPU {
             0x1e => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("asl {}", intermediate_address);
@@ -711,7 +717,7 @@ impl CPU {
             self.a <<= 1 + carry_value;
             self.test_negative(self.a);
             self.test_zero(self.a);
-            self.clock += 2;
+            self.tick(2);
             self.pc += 1;
             return;
         }
@@ -723,7 +729,7 @@ impl CPU {
             0x3e => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("rol {}", intermediate_address);
@@ -746,7 +752,7 @@ impl CPU {
             self.a >>= 1;
             self.test_negative(self.a);
             self.test_zero(self.a);
-            self.clock += 2;
+            self.tick(2);
             self.pc += 1;
             return;
         }
@@ -758,7 +764,7 @@ impl CPU {
             0x5e => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("lsr {}", intermediate_address);
@@ -783,7 +789,7 @@ impl CPU {
             self.a >>= 1;
             self.test_negative(self.a);
             self.test_zero(self.a);
-            self.clock += 2;
+            self.tick(2);
             self.pc += 1;
             return;
         }
@@ -795,7 +801,7 @@ impl CPU {
             0x7e => (self.absolute_x(false), 7, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("ror", intermediate_address);
@@ -822,7 +828,7 @@ impl CPU {
             0xb1 => (self.indirect_zero_page_y(true), 6, 2),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("lda", intermediate_address);
@@ -844,7 +850,7 @@ impl CPU {
             0xbe => (self.absolute_y(true), 4, 2),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("ldx", intermediate_address);
@@ -866,7 +872,7 @@ impl CPU {
             0xbc => (self.absolute_x(true), 4, 2),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("ldy", intermediate_address);
@@ -890,7 +896,7 @@ impl CPU {
             0x91 => (self.indirect_zero_page_y(false), 6, 2),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("sta", address);
@@ -906,7 +912,7 @@ impl CPU {
             0x8e => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("stx", address);
@@ -922,7 +928,7 @@ impl CPU {
             0x8c => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("sty", address);
@@ -934,7 +940,7 @@ impl CPU {
     fn tax(&mut self) {
         self.debug_opcode("tax");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.test_negative(self.a);
@@ -947,7 +953,7 @@ impl CPU {
     fn txa(&mut self) {
         self.debug_opcode("txa");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.test_negative(self.x);
@@ -960,7 +966,7 @@ impl CPU {
     fn tay(&mut self) {
         self.debug_opcode("tay");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.test_negative(self.a);
@@ -973,7 +979,7 @@ impl CPU {
     fn tya(&mut self) {
         self.debug_opcode("tya");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.test_negative(self.y);
@@ -986,7 +992,7 @@ impl CPU {
     fn tsx(&mut self) {
         self.debug_opcode("tsx");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.test_negative(self.s);
@@ -999,7 +1005,7 @@ impl CPU {
     fn txs(&mut self) {
         self.debug_opcode("txs");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
 
         self.s = self.x;
@@ -1009,7 +1015,7 @@ impl CPU {
     fn pla(&mut self) {
         self.debug_opcode("pla");
 
-        self.clock += 4;
+        self.tick(4);
         self.pc += 1;
 
         self.s += 1;
@@ -1025,7 +1031,7 @@ impl CPU {
     fn pha(&mut self) {
         self.debug_opcode("pha");
 
-        self.clock += 3;
+        self.tick(3);
         self.pc += 1;
 
         self.system.write_byte(0x100 + self.s as u16, self.a);
@@ -1056,7 +1062,7 @@ impl CPU {
     fn plp(&mut self) {
         self.debug_opcode("plp");
 
-        self.clock += 4;
+        self.tick(4);
         self.pc += 1;
 
         self.pull_status();
@@ -1109,7 +1115,7 @@ impl CPU {
     fn php(&mut self) {
         self.debug_opcode("php");
 
-        self.clock += 3;
+        self.tick(3);
         self.pc += 1;
 
         self.push_status();
@@ -1132,9 +1138,9 @@ impl CPU {
 
         let new_page = self.pc >> 8;
         if prev_page != new_page {
-            self.clock += 4;
+            self.tick(4);
         } else {
-            self.clock += 3;
+            self.tick(3);
         }
     }
 
@@ -1142,7 +1148,7 @@ impl CPU {
         if condition {
             self.branch(opcode_name);
         } else {
-            self.clock += 2;
+            self.tick(2);
             self.pc += 2;
         }
     }
@@ -1191,7 +1197,7 @@ impl CPU {
     fn brk(&mut self) {
         self.debug_opcode("brk");
 
-        self.clock += 7;
+        self.tick(7);
 
         self.push_word(self.pc);
 
@@ -1205,7 +1211,7 @@ impl CPU {
     fn rti(&mut self) {
         self.debug_opcode("rti");
 
-        self.clock += 6;
+        self.tick(6);
         self.pull_status();
         self.pull_pc();
     }
@@ -1214,7 +1220,7 @@ impl CPU {
     fn jsr(&mut self) {
         self.debug_opcode("jsr");
 
-        self.clock += 6;
+        self.tick(6);
 
         self.push_word(self.pc + 2);
 
@@ -1226,7 +1232,7 @@ impl CPU {
     fn rts(&mut self) {
         self.debug_opcode("rts");
 
-        self.clock += 6;
+        self.tick(6);
         self.pull_pc()
     }
 
@@ -1241,7 +1247,7 @@ impl CPU {
             }
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
 
         self.debug_opcode_with_address("jmp", address);
 
@@ -1255,7 +1261,7 @@ impl CPU {
             0x2c => (self.absolute(), 4, 3),
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
-        self.clock += clock_increment;
+        self.tick(clock_increment);
         self.pc += pc_increment;
 
         self.debug_opcode_with_address("bit", address);
@@ -1270,7 +1276,7 @@ impl CPU {
     fn clc(&mut self) {
         self.debug_opcode("clc");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
         self.carry = false;
     }
@@ -1279,7 +1285,7 @@ impl CPU {
     fn sec(&mut self) {
         self.debug_opcode("sec");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
         self.carry = true;
     }
@@ -1288,7 +1294,7 @@ impl CPU {
     fn cld(&mut self) {
         self.debug_opcode("cld");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
         self.decimal = false;
     }
@@ -1297,7 +1303,7 @@ impl CPU {
     fn sed(&mut self) {
         self.debug_opcode("sed");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
         self.decimal = true;
     }
@@ -1306,7 +1312,7 @@ impl CPU {
     fn cli(&mut self) {
         self.debug_opcode("cli");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
         self.interrupt_disable = false;
     }
@@ -1315,7 +1321,7 @@ impl CPU {
     fn sei(&mut self) {
         self.debug_opcode("sei");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
         self.interrupt_disable = true;
     }
@@ -1324,7 +1330,7 @@ impl CPU {
     fn clv(&mut self) {
         self.debug_opcode("clv");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
         self.overflow = false;
     }
@@ -1333,7 +1339,7 @@ impl CPU {
     fn nop(&mut self) {
         self.debug_opcode("nop");
 
-        self.clock += 2;
+        self.tick(2);
         self.pc += 1;
     }
 }
