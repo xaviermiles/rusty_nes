@@ -20,11 +20,13 @@ pub enum Key {
 }
 
 pub enum Event {
+    #[allow(dead_code)] // TODO: Will KeyUp be necessary?
     KeyUp(Key),
     KeyDown(Key),
     Quit,
 }
 
+#[allow(clippy::upper_case_acronyms)]
 pub struct SDL {
     window: *mut SDL_Window,
     renderer: *mut SDL_Renderer,
@@ -33,8 +35,8 @@ pub struct SDL {
 impl SDL {
     pub fn construct() -> Self {
         Self {
-            window: 0 as *mut SDL_Window,
-            renderer: 0 as *mut SDL_Renderer,
+            window: std::ptr::null_mut::<SDL_Window>(),
+            renderer: std::ptr::null_mut::<SDL_Renderer>(),
         }
     }
 

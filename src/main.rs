@@ -1,4 +1,4 @@
-use rusty_nes::CPU;
+use rusty_nes::{CartLoadError, CPU};
 
 use clap::Parser;
 
@@ -14,8 +14,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = RustyArgs::parse();
 
-    let mut cpu = CPU::new(args.filename);
-    for _ in 1..20 {
+    let mut cpu = CPU::new(args.filename).unwrap_or_else(|err| match err {
+        CartLoadError::FileNotARom => {
+            panic!("Not a valid ROM file.")
+        }
+        CartLoadError::FileNotFound => {
+            panic!("ROM file not found.")
+        }
+        CartLoadError::IoError(io_err) => {
+            panic!("IO Error: {}", io_err);
+        }
+    });
+    for _ in 1..100 {
         cpu.run_opcode();
     }
 
