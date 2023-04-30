@@ -89,6 +89,11 @@ impl CPU {
         log::info!("{}    {}", self.debug_state, opcode_info);
     }
 
+    #[inline]
+    fn debug_opcode_with_address(&self, opcode_name: &str, address: u16) {
+        self.debug_opcode(format!("{} ${:0>4x}", opcode_name, address));
+    }
+
     pub fn run_opcode(&mut self) {
         // Save debug state before altering the counters/registers
         self.save_debug_state();
@@ -377,8 +382,6 @@ impl CPU {
     // Logical and arithmetic commands -----------------------------------------------------------
     /// bitwise OR with Accumulator
     fn ora(&mut self, opcode: u8) {
-        self.debug_opcode("ora");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0x09 => (self.immediate(), 2, 2),
             0x05 => (self.zero_page(), 3, 2),
@@ -393,6 +396,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("ora", intermediate_address);
+
         self.a |= self.system.read_byte(intermediate_address);
         self.test_negative(self.a);
         self.test_zero(self.a);
@@ -400,8 +405,6 @@ impl CPU {
 
     /// bitwise AND with accumulator
     fn and(&mut self, opcode: u8) {
-        self.debug_opcode("and");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0x29 => (self.immediate(), 2, 2),
             0x25 => (self.zero_page(), 3, 2),
@@ -416,6 +419,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode(format!("and {}", intermediate_address));
+
         self.a &= self.system.read_byte(intermediate_address);
         self.test_negative(self.a);
         self.test_zero(self.a);
@@ -423,8 +428,6 @@ impl CPU {
 
     /// bitwise Exclusive OR
     fn eor(&mut self, opcode: u8) {
-        self.debug_opcode("eor");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0x49 => (self.immediate(), 2, 2),
             0x45 => (self.zero_page(), 3, 2),
@@ -439,6 +442,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("eor", intermediate_address);
+
         self.a ^= self.system.read_byte(intermediate_address);
         self.test_negative(self.a);
         self.test_zero(self.a);
@@ -446,8 +451,6 @@ impl CPU {
 
     /// ADd with Carry
     fn adc(&mut self, opcode: u8) {
-        self.debug_opcode("adc");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0x69 => (self.immediate(), 2, 2),
             0x65 => (self.zero_page(), 3, 2),
@@ -462,6 +465,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("adc", intermediate_address);
+
         let intermediate =
             self.a as i16 + self.system.read_byte(intermediate_address) as i16 + !self.carry as i16;
         self.overflow = !(-128..=127).contains(&intermediate);
@@ -474,8 +479,6 @@ impl CPU {
 
     /// SuBtract with Carry
     fn sbc(&mut self, opcode: u8) {
-        self.debug_opcode("sbc");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xe9 => (self.immediate(), 2, 2),
             0xe5 => (self.zero_page(), 3, 2),
@@ -490,6 +493,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("sbc", intermediate_address);
+
         let intermediate =
             self.a as i16 - self.system.read_byte(intermediate_address) as i16 - !self.carry as i16;
         self.overflow = !(-128..=127).contains(&intermediate);
@@ -502,8 +507,6 @@ impl CPU {
 
     /// CoMPare accumulator
     fn cmp(&mut self, opcode: u8) {
-        self.debug_opcode("cmp");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xc9 => (self.immediate(), 2, 2),
             0xc5 => (self.zero_page(), 3, 2),
@@ -518,6 +521,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("cmp", intermediate_address);
+
         let intermediate = self.a as i16 - self.system.read_byte(intermediate_address) as i16;
         self.negative = (intermediate & 0x80) == 0x80;
         self.zero = intermediate == 0;
@@ -526,8 +531,6 @@ impl CPU {
 
     /// ComPare X register
     fn cpx(&mut self, opcode: u8) {
-        self.debug_opcode("cpx");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xc0 => (self.immediate(), 2, 2),
             0xc4 => (self.zero_page(), 3, 2),
@@ -537,6 +540,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("cpx", intermediate_address);
+
         let intermediate = self.y as i16 - self.system.read_byte(intermediate_address) as i16;
         self.negative = intermediate & 0x80 == 0x80;
         self.zero = intermediate == 0;
@@ -545,8 +550,6 @@ impl CPU {
 
     /// ComPare Y register
     fn cpy(&mut self, opcode: u8) {
-        self.debug_opcode("cpy");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xe0 => (self.immediate(), 2, 2),
             0xe4 => (self.zero_page(), 3, 2),
@@ -556,6 +559,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("cpy", intermediate_address);
+
         let intermediate = self.x as i16 - self.system.read_byte(intermediate_address) as i16;
         self.negative = intermediate & 0x80 == 0x80;
         self.zero = intermediate == 0;
@@ -564,8 +569,6 @@ impl CPU {
 
     /// DECrement memory
     fn dec(&mut self, opcode: u8) {
-        self.debug_opcode("dec");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xc6 => (self.zero_page(), 5, 2),
             0xd6 => (self.zero_page_x(), 6, 2),
@@ -575,6 +578,8 @@ impl CPU {
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
+
+        self.debug_opcode_with_address("dec", intermediate_address);
 
         let intermediate = self.system.read_byte(intermediate_address) - 1;
         self.test_negative(intermediate);
@@ -608,8 +613,6 @@ impl CPU {
 
     /// INCrement memory
     fn inc(&mut self, opcode: u8) {
-        self.debug_opcode("inc");
-
         let (intermediate_address, clock_increment, pc_increment) = match opcode {
             0xe6 => (self.zero_page(), 5, 2),
             0xf6 => (self.zero_page_x(), 6, 2),
@@ -619,6 +622,8 @@ impl CPU {
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
+
+        self.debug_opcode_with_address("inc", intermediate_address);
 
         let intermediate = self.system.read_byte(intermediate_address) + 1;
         self.test_negative(intermediate);
@@ -652,10 +657,10 @@ impl CPU {
 
     /// Arithmetic Shift Left
     fn asl(&mut self, opcode: u8) {
-        self.debug_opcode("asl");
-
         // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
         if opcode == 0x0a {
+            self.debug_opcode("asl A");
+
             self.carry = self.a & 0x80 == 0x80;
             self.a <<= 1;
             self.test_negative(self.a);
@@ -675,6 +680,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("asl {}", intermediate_address);
+
         let mut intermediate = self.system.read_byte(intermediate_address);
         self.carry = (intermediate & 0x80) == 0x80;
         intermediate <<= 1;
@@ -685,12 +692,12 @@ impl CPU {
 
     /// ROtate Left
     fn rol(&mut self, opcode: u8) {
-        self.debug_opcode("rol");
-
         let carry_value = self.carry as u8;
 
         // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
         if opcode == 0x2a {
+            self.debug_opcode("rol A");
+
             self.carry = self.a & 0x80 == 0x80;
             self.a <<= 1 + carry_value;
             self.test_negative(self.a);
@@ -710,6 +717,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("rol {}", intermediate_address);
+
         let mut intermediate = self.system.read_byte(intermediate_address);
         self.carry = (intermediate & 0x80) == 0x80;
         intermediate <<= 1 + carry_value;
@@ -720,10 +729,10 @@ impl CPU {
 
     ///Logical Shift Right
     fn lsr(&mut self, opcode: u8) {
-        self.debug_opcode("lsr");
-
         // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
         if opcode == 0x4a {
+            self.debug_opcode("lsr A");
+
             self.carry = self.a & 0x01 == 0x01;
             self.a >>= 1;
             self.test_negative(self.a);
@@ -743,6 +752,8 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("lsr {}", intermediate_address);
+
         let mut intermediate = self.system.read_byte(intermediate_address);
         self.carry = (intermediate & 0x01) == 0x01;
         intermediate >>= 1;
@@ -753,12 +764,12 @@ impl CPU {
 
     /// ROtate Right
     fn ror(&mut self, opcode: u8) {
-        self.debug_opcode("ror");
-
         let carry_value: u8 = if self.carry { 0x80 } else { 0 };
 
         // Dealing with the accumulator directly doesn't fit the pattern well, so handle separately
         if opcode == 0x6a {
+            self.debug_opcode("ror A");
+
             self.carry = self.a & 0x01 == 0x01;
             self.a >>= 1;
             self.test_negative(self.a);
@@ -777,6 +788,8 @@ impl CPU {
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
+
+        self.debug_opcode_with_address("ror", intermediate_address);
 
         let mut intermediate = self.system.read_byte(intermediate_address);
         self.carry = (intermediate & 0x01) == 0x01;
@@ -803,11 +816,12 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("lda", intermediate_address);
+
         let intermediate = self.system.read_byte(intermediate_address);
         self.test_negative(intermediate);
         self.test_zero(intermediate);
 
-        self.debug_opcode(format!("lda #${:0>2x}", intermediate_address));
         self.a = intermediate;
     }
 
@@ -824,11 +838,12 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("ldx", intermediate_address);
+
         let intermediate = self.system.read_byte(intermediate_address);
         self.test_negative(intermediate);
         self.test_zero(intermediate);
 
-        self.debug_opcode(format!("ldx #${:02x}", intermediate));
         self.x = intermediate;
     }
 
@@ -845,18 +860,17 @@ impl CPU {
         self.clock += clock_increment;
         self.pc += pc_increment;
 
+        self.debug_opcode_with_address("ldy", intermediate_address);
+
         let intermediate = self.system.read_byte(intermediate_address);
         self.test_negative(intermediate);
         self.test_zero(intermediate);
 
-        self.debug_opcode(format!("ldy #${:02x}", intermediate));
         self.y = intermediate;
     }
 
     /// STore Accumulator
     fn sta(&mut self, opcode: u8) {
-        self.debug_opcode("sta");
-
         let (address, clock_increment, pc_increment) = match opcode {
             0x85 => (self.zero_page(), 3, 2),
             0x95 => (self.zero_page_x(), 4, 2),
@@ -869,13 +883,14 @@ impl CPU {
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
+
+        self.debug_opcode_with_address("sta", address);
+
         self.system.write_byte(address, self.a);
     }
 
     /// STore X register
     fn stx(&mut self, opcode: u8) {
-        self.debug_opcode("stx");
-
         let (address, clock_increment, pc_increment) = match opcode {
             0x86 => (self.zero_page(), 3, 2),
             0x96 => (self.zero_page_y(), 4, 2),
@@ -884,13 +899,14 @@ impl CPU {
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
+
+        self.debug_opcode_with_address("stx", address);
+
         self.system.write_byte(address, self.x);
     }
 
     /// STore Y register
     fn sty(&mut self, opcode: u8) {
-        self.debug_opcode("sty");
-
         let (address, clock_increment, pc_increment) = match opcode {
             0x84 => (self.zero_page(), 3, 2),
             0x94 => (self.zero_page_y(), 4, 2),
@@ -899,6 +915,9 @@ impl CPU {
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
+
+        self.debug_opcode_with_address("sty", address);
+
         self.system.write_byte(address, self.y);
     }
 
@@ -1096,10 +1115,12 @@ impl CPU {
         // For this pc increment, see https://github.com/jntrnr/jaktnesmonster/pull/1
         self.pc += 2;
 
-        self.debug_opcode(format!("{} {:0>4x}", opcode_name, address));
         let prev_page = self.pc >> 8;
         // TODO: test this
         self.pc = (self.pc as i16 + address as i16) as u16;
+
+        self.debug_opcode_with_address(opcode_name, self.pc);
+
         let new_page = self.pc >> 8;
         if prev_page != new_page {
             self.clock += 4;
@@ -1202,8 +1223,6 @@ impl CPU {
 
     /// JuMP
     fn jmp(&mut self, opcode: u8) {
-        self.debug_opcode("jmp");
-
         let arg_address = self.immediate();
 
         let (address, clock_increment) = match opcode {
@@ -1217,13 +1236,14 @@ impl CPU {
             _ => panic!("Unknown opcode {:02x}", opcode),
         };
         self.clock += clock_increment;
+
+        self.debug_opcode_with_address("jmp", address);
+
         self.pc = address;
     }
 
     /// test BITs
     fn bit(&mut self, opcode: u8) {
-        self.debug_opcode("bit");
-
         let (address, clock_increment, pc_increment) = match opcode {
             0x24 => (self.zero_page(), 3, 2),
             0x2c => (self.absolute(), 4, 3),
@@ -1231,6 +1251,8 @@ impl CPU {
         };
         self.clock += clock_increment;
         self.pc += pc_increment;
+
+        self.debug_opcode_with_address("bit", address);
 
         let value = self.system.read_byte(address);
         self.zero = value & self.a == 0;
